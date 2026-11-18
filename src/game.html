@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shit Stompers</title>
 <style>
+  /*__FONT_CSS__*/
   :root{
     --art-plain: url("__ART_PLAIN__");
     --art-excited: url("__ART_EXCITED__");
@@ -315,20 +316,48 @@
   .dontshow input{width:15px;height:15px;accent-color:#a3702f;cursor:pointer}
   .panel .btn{justify-content:center;min-width:200px}
 
-  /* ---------------- title screen life ---------------- */
+  /* ---------------- title screen ---------------- */
+  /* Day-of-the-fair sky behind the sign, fading into the boards Crappy stands
+     on. The font is Luckiest Guy (display) + Fredoka (UI), both inlined by the
+     build, so there is no CDN and it stays one file. */
   #titleOverlay{
-    overflow-y:auto;overflow-x:hidden;flex-direction:column;gap:12px;
-    justify-content:flex-start;padding:18px 16px;
+    overflow-y:auto;overflow-x:hidden;flex-direction:column;gap:0;
+    justify-content:flex-start;padding:12px 14px 18px;
+    background:
+      radial-gradient(56% 30% at 50% 2%, rgba(255,252,232,.72), rgba(255,252,232,0) 70%),
+      linear-gradient(180deg,#3f9be0 0%,#78c3f8 24%,#b8e5ff 42%,#ffecc0 56%,#f6cd7c 66.5%,#8a5a2b 68.4%,#5d3a1d 100%);
+    backdrop-filter:none;
   }
-  #titleOverlay .brand{margin-top:auto;flex:0 0 auto}
-  #titleOverlay .panel{margin-bottom:auto;max-height:none;flex:0 0 auto}
+  #titleOverlay .sky{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+  /* the boards Crappy stands on */
+  #titleOverlay .sky::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:31%;
+    background:
+      repeating-linear-gradient(180deg, rgba(0,0,0,.11) 0 2px, rgba(255,255,255,0) 2px 24px),
+      linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,0) 26%, rgba(0,0,0,.20));
+    box-shadow:inset 0 16px 26px rgba(0,0,0,.14);
+  }
+  #titleOverlay .sun{
+    position:absolute;top:-130px;right:-90px;width:380px;height:380px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,250,224,.95),rgba(255,226,146,.5) 44%,rgba(255,214,102,0) 72%);
+  }
+  #titleOverlay .cloud{
+    position:absolute;background:rgba(255,255,255,.9);border-radius:999px;filter:blur(1px);
+    animation:cloudDrift 9s ease-in-out infinite alternate;
+  }
+  #titleOverlay .cloud::before,#titleOverlay .cloud::after{content:"";position:absolute;background:inherit;border-radius:50%}
+  #titleOverlay .c1{width:150px;height:44px;top:9%;left:5%}
+  #titleOverlay .c1::before{width:64px;height:64px;top:-26px;left:22px}
+  #titleOverlay .c1::after{width:44px;height:44px;top:-16px;right:22px}
+  #titleOverlay .c2{width:110px;height:34px;top:19%;right:7%;animation-delay:-3s}
+  #titleOverlay .c2::before{width:48px;height:48px;top:-20px;left:16px}
+  #titleOverlay .c2::after{width:34px;height:34px;top:-12px;right:16px}
+  #titleOverlay .c3{width:90px;height:28px;top:33%;left:13%;animation-delay:-6s;opacity:.85}
+  #titleOverlay .c3::before{width:38px;height:38px;top:-16px;left:14px}
+  @keyframes cloudDrift{from{transform:translateX(-16px)}to{transform:translateX(18px)}}
 
-  /* ---- the sign out front ---- */
-  .brand{position:relative;z-index:3;text-align:center;padding:0 12px}
-  .brand::before{
-    content:"";position:absolute;inset:-18% -26% -14%;z-index:-1;pointer-events:none;
-    background:radial-gradient(58% 58% at 50% 58%, rgba(255,178,58,.26), rgba(255,178,58,0) 72%);
-  }
+  #titleOverlay .brand{margin-top:auto;flex:0 0 auto}
+  .brand{position:relative;z-index:3;text-align:center;padding:0 6px}
   .brand.boom{animation:boom .2s ease-out}
   @keyframes boom{
     0%{transform:translate(0,0)}
@@ -337,43 +366,64 @@
     72%{transform:translate(-2px,2px)}
     100%{transform:none}
   }
-  .brand .mascot{
-    width:74px;margin:0 auto 10px;display:block;
-    filter:drop-shadow(0 8px 9px rgba(0,0,0,.55));
-    animation:crappyFlyIn .74s cubic-bezier(.22,.9,.2,1) 1.05s both,
-              mascotBob 3.6s ease-in-out 1.95s infinite;
+
+  /* ---- hero: the character, huge ---- */
+  .hero-wrap{position:relative;z-index:3;width:min(330px,58vw);margin:6px auto -34px}
+  /* Crappy the superhero: the fly-in from crappy-superhero-flyin.mp4, cut to a
+     transparent 40-frame strip (16fps) so the white studio plate is gone and
+     the last frame holds with his hands on his hips. */
+  .hero-sheet{
+    position:relative;width:100%;aspect-ratio:1;overflow:hidden;
+    filter:drop-shadow(0 16px 12px rgba(24,10,0,.45));
   }
-  @keyframes crappyFlyIn{
-    0%{opacity:0;transform:translate(-165%,-46px) rotate(-40deg) scale(.66)}
-    62%{opacity:1;transform:translate(10px,7px) rotate(10deg) scale(1.07)}
-    82%{transform:translate(-4px,0) rotate(-4deg) scale(1)}
-    100%{opacity:1;transform:none}
+  .hero-sheet .strip{
+    position:absolute;top:0;left:0;height:100%;width:4000%;
+    background-image:url("__ART_HERO__");
+    background-repeat:no-repeat;background-size:100% 100%;
+    opacity:0;
   }
+  /* .fly is added by JS once the announcer has finished saying the name */
+  .hero-sheet.fly .strip{animation:heroFly 2.2s steps(39,end) both;opacity:1}
+  .hero-sheet.bob{animation:mascotBob 3.6s ease-in-out infinite}
+  /* 40 frames: steps(39) + an end value of 39/40 keeps every step exactly one
+     frame wide and parks the held last frame inside the window. */
+  @keyframes heroFly{from{transform:translateX(0)}to{transform:translateX(-97.5%)}}
+  @keyframes mascotBob{
+    0%,100%{transform:translateY(0) rotate(0)}
+    45%{transform:translateY(-6px) rotate(-1.4deg)}
+    70%{transform:translateY(-2px) rotate(.7deg)}
+  }
+  .title-shadow{
+    width:min(230px,50vw);height:18px;margin:0 auto -2px;border-radius:50%;
+    background:radial-gradient(ellipse at center,rgba(28,12,0,.42),rgba(28,12,0,0) 72%);
+    animation:shadowIn .7s ease-out .1s both;
+  }
+  @keyframes shadowIn{0%{transform:scale(.2);opacity:0}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
+
+  /* ---- wordmark: gold slab with a heavy brown edge ---- */
   h1.logo{
-    margin:0;line-height:.88;text-transform:uppercase;letter-spacing:0;
-    font-family:Impact,"Haettenschweiler","Arial Narrow Bold","Franklin Gothic Heavy",
-      "Arial Black",system-ui,sans-serif;font-weight:400;
+    margin:-30px 0 2px;line-height:.86;text-transform:uppercase;position:relative;z-index:2;
+    font-family:'Luckiest Guy','Arial Black',system-ui,sans-serif;font-weight:400;
+    letter-spacing:.015em;transform:rotate(-2deg);
   }
+  .logo .l1,.logo .l2{display:block}
   .logo b{
-    display:inline-block;font-weight:inherit;position:relative;
-    background:linear-gradient(180deg,#fff6d3 4%,#ffd071 38%,#e0932f 66%,#9c5a19 100%);
+    display:inline-block;font-weight:inherit;
+    background-image:linear-gradient(180deg,#fff3c4 8%,#ffd764 34%,#f5a623 62%,#c96a12 90%);
     -webkit-background-clip:text;background-clip:text;
     color:transparent;-webkit-text-fill-color:transparent;
-    filter:drop-shadow(0 2px 0 #3b1b07) drop-shadow(0 5px 0 #280f04)
-           drop-shadow(0 10px 11px rgba(0,0,0,.55));
+    -webkit-text-stroke:2px #4a2a10;
+    filter:drop-shadow(0 3px 0 #4a2a10) drop-shadow(0 9px 10px rgba(36,14,0,.42));
   }
-
-  /* ---- SHIT: brown, wet, leaking ---- */
-  .logo .l1{
-    display:block;position:relative;z-index:2;
-    font-size:clamp(64px,20vmin,142px);line-height:1;letter-spacing:.015em;
-    margin:0 0 7px;
-    animation:slamDown .5s cubic-bezier(.18,.9,.18,1) .12s both;
-  }
+  .logo .l1,.logo .l2{opacity:0}
+  .logo .l1{font-size:clamp(56px,15.5vmin,108px)}
+  .logo .l2{font-size:clamp(43px,12.4vmin,90px)}
+  /* SHIT is brown, wet, and leaking — it lands with a splat */
   .logo .l1 b{
-    background-image:linear-gradient(176deg,#a97240 2%,#82501f 26%,#5f3611 58%,#3f210a 100%);
+    background-image:linear-gradient(176deg,#b87c46 2%,#8a5522 26%,#5f3611 58%,#3b1e08 100%);
+    -webkit-text-stroke:2px #2b1505;
     filter:drop-shadow(0 2px 0 #2b1505) drop-shadow(0 6px 0 #1d0e03)
-           drop-shadow(0 11px 12px rgba(0,0,0,.6));
+           drop-shadow(0 11px 12px rgba(0,0,0,.5));
   }
   .logo .l1 b::before,
   .logo .l1 b::after{
@@ -384,58 +434,82 @@
   }
   .logo .l1 b::after{animation:ooze 5.4s ease-in-out infinite alternate}
   @keyframes ooze{from{transform:scaleY(.82)}to{transform:scaleY(1.16)}}
-  .logo .l1 b:nth-child(1)::after{left:24%;height:.26em;animation-delay:-.8s}
-  .logo .l1 b:nth-child(1)::before{left:61%;height:.14em;width:.085em}
-  .logo .l1 b:nth-child(2)::after{left:38%;height:.38em;width:.105em;animation-delay:-2.1s}
-  .logo .l1 b:nth-child(2)::before{left:73%;height:.18em;width:.085em}
-  .logo .l1 b:nth-child(3)::after{left:29%;height:.22em;animation-delay:-3.4s}
-  .logo .l1 b:nth-child(3)::before{left:65%;height:.32em;width:.095em}
-  .logo .l1 b:nth-child(4)::after{left:50%;height:.4em;width:.105em;animation-delay:-1.5s}
-  .logo .l1 b:nth-child(4)::before{left:17%;height:.16em;width:.085em}
-  .logo .l1 b:nth-child(odd){transform:rotate(-1.6deg)}
-  .logo .l1 b:nth-child(even){transform:translateY(-.035em) rotate(1.3deg)}
-
-  /* ---- STOMPERS: gold, lands second ---- */
-  .logo .l2{
-    display:block;position:relative;z-index:1;
-    font-size:clamp(54px,17vmin,118px);line-height:1;letter-spacing:-.012em;
-    animation:slamDown .54s cubic-bezier(.18,.9,.18,1) .62s both;
-  }
-  .logo .l2 b:nth-child(1){transform:translateY(.015em) rotate(-2.4deg)}
-  .logo .l2 b:nth-child(2){transform:translateY(-.03em) rotate(1.6deg)}
-  .logo .l2 b:nth-child(3){transform:translateY(.02em) rotate(-1.2deg)}
-  .logo .l2 b:nth-child(4){transform:translateY(-.035em) rotate(2.2deg)}
-  .logo .l2 b:nth-child(5){transform:translateY(.01em) rotate(-2deg)}
-  .logo .l2 b:nth-child(6){transform:translateY(-.025em) rotate(1.4deg)}
-  .logo .l2 b:nth-child(7){transform:translateY(.02em) rotate(-1.6deg)}
-  .logo .l2 b:nth-child(8){transform:translateY(-.015em) rotate(2.4deg)}
-
+  .logo .l1 b:nth-child(1)::after{left:24%;height:.24em;animation-delay:-.8s}
+  .logo .l1 b:nth-child(1)::before{left:61%;height:.13em;width:.085em}
+  .logo .l1 b:nth-child(2)::after{left:38%;height:.34em;width:.105em;animation-delay:-2.1s}
+  .logo .l1 b:nth-child(2)::before{left:73%;height:.17em;width:.085em}
+  .logo .l1 b:nth-child(3)::after{left:29%;height:.2em;animation-delay:-3.4s}
+  .logo .l1 b:nth-child(3)::before{left:65%;height:.3em;width:.095em}
+  .logo .l1 b:nth-child(4)::after{left:50%;height:.36em;width:.105em;animation-delay:-1.5s}
+  .logo .l1 b:nth-child(4)::before{left:17%;height:.15em;width:.085em}
+  /* each word waits for its own announcer hit */
+  #titleOverlay.hit1 .logo .l1{animation:slamDown .5s cubic-bezier(.18,.9,.18,1) both}
+  #titleOverlay.hit2 .logo .l2{animation:slamDown .54s cubic-bezier(.18,.9,.18,1) both}
   @keyframes slamDown{
-    0%{opacity:0;transform:translateY(-96px) scale(1.5) rotate(-4deg)}
-    58%{opacity:1;transform:translateY(8px) scale(.965) rotate(.9deg)}
+    0%{opacity:0;transform:translateY(-90px) scale(1.45) rotate(-4deg)}
+    58%{opacity:1;transform:translateY(7px) scale(.968) rotate(.9deg)}
     80%{transform:translateY(-3px) scale(1.006)}
     100%{opacity:1;transform:none}
   }
+  /* the splat behind SHIT */
+  .splatburst{
+    position:absolute;left:50%;top:40%;width:min(560px,88vw);height:min(300px,44vh);
+    transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;z-index:0;
+    filter:blur(2px);
+    background:
+      radial-gradient(closest-side at 38% 46%, rgba(92,54,22,.88), rgba(92,54,22,0) 70%),
+      radial-gradient(closest-side at 63% 37%, rgba(74,42,16,.82), rgba(74,42,16,0) 68%),
+      radial-gradient(closest-side at 52% 62%, rgba(108,64,28,.72), rgba(108,64,28,0) 72%),
+      radial-gradient(closest-side at 27% 60%, rgba(62,34,12,.62), rgba(62,34,12,0) 66%);
+  }
+  #titleOverlay.hit1 .splatburst{animation:splatIn .5s ease-out both}
+  @keyframes splatIn{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}
+    35%{opacity:.95;transform:translate(-50%,-50%) scale(1.06)}
+    100%{opacity:.7;transform:translate(-50%,-50%) scale(1)}
+  }
   .brand .tag{
-    margin-top:14px;font-size:11.5px;font-weight:800;letter-spacing:.4em;
-    text-transform:uppercase;color:#ffe2a8;text-shadow:0 2px 7px rgba(0,0,0,.8);
-    animation:tagIn .5s ease-out 1.55s both;
+    margin-top:9px;font-family:Fredoka,"Trebuchet MS",sans-serif;font-weight:700;
+    font-size:clamp(10.5px,1.5vmin,13px);letter-spacing:.32em;text-transform:uppercase;
+    color:#5b3417;text-shadow:0 1px 0 rgba(255,248,226,.9), 0 3px 8px rgba(36,14,0,.28);
+    opacity:0;
   }
   @keyframes tagIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  @media (max-height:720px){
-    .brand .mascot{width:58px;margin-bottom:0}
-    .logo .l1{font-size:clamp(50px,15vmin,96px)}
-    .logo .l2{font-size:clamp(40px,11vmin,84px)}
-    .brand .tag{margin-top:7px;font-size:10.5px}
+
+  /* ---- rules card + start ---- */
+  #titleOverlay .panel{
+    margin:12px auto auto;width:min(620px,100%);flex:0 0 auto;max-height:none;
+    background:linear-gradient(180deg,rgba(253,243,215,.97),rgba(238,219,178,.97));
+    border:3px solid #7a4a21;border-bottom-width:7px;border-radius:18px;
+    box-shadow:0 18px 40px rgba(24,10,0,.45), inset 0 1px 0 rgba(255,255,255,.8);
+    padding:13px 16px 12px;z-index:2;
+    font-family:Fredoka,"Trebuchet MS",sans-serif;
+    opacity:0;
   }
-  @media (prefers-reduced-motion:reduce){
-    .brand .mascot,.brand .tag,.logo .l1,.logo .l2,#titleOverlay .panel,
-    .logo .l1 b::after{animation:none}
+  #titleOverlay .cols{gap:8px;margin-bottom:10px}
+  #titleOverlay .col{background:rgba(255,255,255,.5);padding:9px 11px;border-radius:9px}
+  #titleOverlay .col h3{font-family:Fredoka,"Trebuchet MS",sans-serif;letter-spacing:1.5px}
+  #titleOverlay .col p{font-family:Fredoka,"Trebuchet MS",sans-serif;font-weight:500;font-size:12.5px;line-height:1.38}
+  #titleOverlay .fine{font-family:Fredoka,"Trebuchet MS",sans-serif;font-weight:500;font-size:11.5px;line-height:1.45;margin:0 0 8px}
+  #titleOverlay .dontshow{font-family:Fredoka,"Trebuchet MS",sans-serif;margin-bottom:8px}
+  #titleOverlay #btnPlay{
+    font-family:Fredoka,"Trebuchet MS",sans-serif;font-size:19px;letter-spacing:1.4px;
+    padding:14px 34px;min-width:250px;justify-content:center;
+    animation:ctaBreath 3.2s ease-in-out infinite;
   }
-  #titleOverlay::after{
-    content:"";position:absolute;inset:0;pointer-events:none;
-    box-shadow:inset 0 0 170px 46px rgba(0,0,0,.58);
+  @keyframes ctaBreath{
+    0%,100%{box-shadow:0 6px 0 #7a4a21, 0 10px 18px rgba(0,0,0,.35)}
+    50%{box-shadow:0 6px 0 #7a4a21, 0 10px 26px rgba(255,196,90,.55)}
   }
+  #titleOverlay.ready .brand .tag{animation:tagIn .5s ease-out .05s both}
+  #titleOverlay.ready .panel{animation:panelIn .44s cubic-bezier(.22,1.25,.4,1) both}
+  @keyframes panelIn{
+    0%{transform:scale(.94) translateY(16px);opacity:0}
+    62%{transform:scale(1.012) translateY(0);opacity:1}
+    100%{transform:scale(1);opacity:1}
+  }
+
+  /* ---- fireflies over the boards ---- */
   .fireflies{position:absolute;inset:0;pointer-events:none;z-index:1}
   .fireflies i{
     position:absolute;width:5px;height:5px;border-radius:50%;background:#ffe6a0;
@@ -456,28 +530,32 @@
     82%{opacity:.8;transform:translate(-12px,-48px) scale(.9)}
     100%{opacity:0;transform:translate(8px,-64px) scale(.8)}
   }
-  @keyframes panelIn{
-    0%{transform:scale(.94) translateY(14px);opacity:0}
-    62%{transform:scale(1.012) translateY(0);opacity:1}
-    100%{transform:scale(1)}
+
+  /* ---- short screens ---- */
+  @media (max-height:720px){
+    .hero-wrap{width:min(240px,44vw)}
+    .logo .l1{font-size:clamp(44px,12vmin,84px)}
+    .logo .l2{font-size:clamp(34px,9.6vmin,70px)}
+    h1.logo{margin-top:-30px}
+    .brand .tag{margin-top:5px;font-size:10px}
+    #titleOverlay .col p{font-size:12px}
+    #titleOverlay .fine{font-size:11px}
   }
-  #titleOverlay .panel{animation:panelIn .44s cubic-bezier(.22,1.25,.4,1) 1.7s both;z-index:2}
-  @keyframes mascotBob{
-    0%,100%{transform:translateY(0) rotate(0)}
-    45%{transform:translateY(-6px) rotate(-1.6deg)}
-    70%{transform:translateY(-2px) rotate(.8deg)}
+  @media (max-width:640px){
+    .hero-wrap{width:min(180px,48vw)}
+    h1.logo{margin-top:-16px}
+    #titleOverlay .cols{grid-template-columns:1fr;gap:5px;margin-bottom:8px}
+    #titleOverlay .col{padding:7px 9px}
+    #titleOverlay .col p{font-size:12px;line-height:1.32}
+    #titleOverlay .fine{font-size:11px;margin-bottom:5px}
+    #titleOverlay #btnPlay{min-width:0;width:100%}
   }
-  #titleOverlay .mascot{animation:mascotBob 3.6s ease-in-out infinite}
-  @keyframes titleBob{
-    0%,100%{transform:scale(1) rotate(0)}
-    48%{transform:scale(1.03) rotate(-.7deg)}
+  @media (prefers-reduced-motion:reduce){
+    .brand .tag,.logo .l1,.logo .l2,.title-shadow,
+    #titleOverlay .panel,.fireflies i,#titleOverlay .cloud,.splatburst{animation:none}
+    .brand .tag,.logo .l1,.logo .l2,#titleOverlay .panel{opacity:1}
+    .hero-sheet .strip,.hero-sheet.fly .strip{animation:none;transform:translateX(-97.5%);opacity:1}
   }
-  #titleOverlay h1 .pop{display:inline-block;animation:titleBob 5.2s ease-in-out infinite}
-  @keyframes ctaBreath{
-    0%,100%{box-shadow:0 6px 0 #7a4a21, 0 10px 18px rgba(0,0,0,.35)}
-    50%{box-shadow:0 6px 0 #7a4a21, 0 10px 26px rgba(255,196,90,.45)}
-  }
-  #titleOverlay #btnPlay{animation:ctaBreath 3.2s ease-in-out infinite}
   .panel.small{width:min(380px,100%);padding:20px 20px 18px}
   .panel.small h1{font-size:27px}
   .panel .row{display:flex;gap:10px;justify-content:center;margin-top:14px}
@@ -605,9 +683,22 @@
 
 <!-- title / how to play -->
 <div class="overlay" id="titleOverlay">
+  <div class="sky" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+  </div>
   <div class="fireflies" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="brand">
-    <img class="mascot" id="mascot" alt="">
+    <div class="hero-wrap">
+      <div class="hero-sheet" id="heroSheet" role="img"
+           aria-label="Crappy the superhero flies in with a red cape and lands with his hands on his hips">
+        <div class="strip"></div>
+      </div>
+    </div>
+    <div class="title-shadow" aria-hidden="true"></div>
+    <div class="splatburst" aria-hidden="true"></div>
     <h1 class="logo" aria-label="Shit Stompers">
       <span class="l1" aria-hidden="true"><b>S</b><b>H</b><b>I</b><b>T</b></span>
       <span class="l2" aria-hidden="true"><b>S</b><b>T</b><b>O</b><b>M</b><b>P</b><b>E</b><b>R</b><b>S</b></span>
@@ -877,6 +968,7 @@ function speak(name, opts){
     if (voiceNow === a) voiceBusyUntil = performance.now() + a.duration * 1000 + 240;
   });
   a.addEventListener("ended", ()=>{ if (voiceNow === a) voiceNow = null; });
+  if (opts && opts.onEnd) a.addEventListener("ended", ()=>opts.onEnd(a), { once: true });
   const p = a.play();
   if (p && p.catch) p.catch(()=>{ if (voiceNow === a) voiceNow = null; });
 }
@@ -1387,7 +1479,7 @@ $("btnNew").addEventListener("click", ()=>{
   els.endOverlay.classList.add("hidden");
   setupRound();
 });
-$("mascot").src = ART.crown;
+// The title hero is the inlined sprite strip; the crown art is only the golden-word fly.
 
 /* ---------------- skill levels ---------------- */
 let pendingLevel = null;
@@ -1464,22 +1556,97 @@ document.addEventListener("keydown", e=>{
 
 if (localStorage.getItem("ss_skip_howto") === "1") els.titleOverlay.classList.add("hidden");
 
-// Two impacts on the way in: SHIT lands, then STOMPERS. Any sound wanted for
-// these hangs off the ss-slam event (detail.n = 1 or 2), so the audio files can
-// drop in later without touching the timing.
+/* ---------------- title sequence ---------------- */
+// SHIT lands with a splat and the announcer says it; STOMPERS stomps in when
+// that line ends and says its own name; the tag and card arrive while the
+// second line is still talking, and Crappy answers when the announcer is done.
+// Every step chains to the clip before it, with a timer fallback so a muted or
+// missing clip still runs the whole show. CSS is never retimed to chase audio.
+let announcerNow = null;
+function announce(name){
+  if (muted) return null;
+  const src = VOICE[name];
+  if (!src) return null;
+  try { if (announcerNow) announcerNow.pause(); } catch (e) {}
+  const a = new Audio(src);
+  a.volume = 0.95;
+  announcerNow = a;
+  const p = a.play();
+  if (p && p.catch) p.catch(()=>{ if (announcerNow === a) announcerNow = null; });
+  return a;
+}
+
+document.addEventListener("ss-slam", e=>{
+  const n = (e.detail && e.detail.n) || 1;
+  if (n === 1){ noise(.14, .16, 560); tone(140, .12, "sine", .10, 70); }
+  else { noise(.22, .20, 420); tone(90, .20, "sine", .14, 44); }
+});
+
 (function titleSlam(){
-  if (els.titleOverlay.classList.contains("hidden")) return;
-  const brand = els.titleOverlay.querySelector(".brand");
+  const ov = els.titleOverlay;
+  if (ov.classList.contains("hidden")) return;
+  const brand = ov.querySelector(".brand");
   const hit = (n)=>{
     document.dispatchEvent(new CustomEvent("ss-slam", { detail: { n } }));
+    ov.classList.add("hit" + n);
     if (!brand) return;
     brand.classList.remove("boom");
     void brand.offsetWidth;
     brand.classList.add("boom");
   };
-  setTimeout(()=>hit(1), 400);   // SHIT lands
-  setTimeout(()=>hit(2), 900);   // STOMPERS lands
-  setTimeout(()=>speak("letsstomp"), 1500);
+  // Run fn when the clip finishes. Only trust "ended" once the clip is actually
+  // playing: a blocked autoplay fires "ended" straight away, which would slam
+  // both words down in the same frame. The timer is the clip's own length plus
+  // a beat, so a muted or blocked intro still lands in the right places.
+  const after = (clip, fallbackMs, fn)=>{
+    let fired = false;
+    const go = ()=>{ if (fired) return; fired = true; fn(); };
+    if (clip) clip.addEventListener("playing", ()=>{
+      clip.addEventListener("ended", go, { once: true });
+    }, { once: true });
+    setTimeout(go, fallbackMs);
+  };
+
+  // SHIT lands, STOMPERS lands under it, Crappy flies in and stands on the
+  // wordmark, he says his line the moment he touches down, and only then do
+  // the tag and the rules card (with START) come up.
+  const sheet = ov.querySelector(".hero-sheet");
+  const strip = ov.querySelector(".hero-sheet .strip");
+  let revealed = false;
+  const revealCard = ()=>{
+    if (revealed) return;
+    revealed = true;
+    ov.classList.add("ready");
+  };
+  let spoke = false;
+  const heroLanded = ()=>{
+    if (spoke) return;
+    spoke = true;
+    if (sheet) sheet.classList.add("bob");
+    // his mouth is moving from the moment he plants his feet
+    speak("letsstomp", { force: true, onEnd: revealCard });
+    setTimeout(revealCard, 2800);   // muted, or a clip that never ends
+  };
+  const flyIn = ()=>{
+    if (sheet) sheet.classList.add("fly");
+    setTimeout(heroLanded, 2600);   // reduced motion, or no animationend
+    if (strip) strip.addEventListener("animationend", heroLanded, { once: true });
+  };
+
+  setTimeout(()=>{
+    hit(1);
+    sfx.splat();
+    const first = announce("announcer-shit");
+    after(first, 1300, ()=>{
+      hit(2);
+      sfx.splat();
+      const second = announce("announcer-stompers");
+      after(second, 2700, flyIn);
+    });
+  }, 420);
+
+  // if anything above fails to fire, the card must still appear
+  setTimeout(revealCard, 10000);
 })();
 shownScore = 0;
 setupRound();

@@ -14,3 +14,5 @@ poop-sneaky.mp3 — "Secret stinker! Sneaky!"
 poop-again.mp3 — "Again again! I love this game!"
 poop-pilebonus.mp3 — "Pile bonus! Nice!"
 poop-laurabest.mp3 — "Laura? You're the best!"
+poop-announcer-shit.mp3 — "Shit!" (title slam 1)
+poop-announcer-stompers.mp3 — "Stompers!" (title slam 2)

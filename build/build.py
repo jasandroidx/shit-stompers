@@ -31,6 +31,10 @@ def jpeg_uri(path, width=1024, quality=78):
     im.save(buf, "JPEG", quality=quality, optimize=True, progressive=True)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
 
+def webp_uri(path):
+    with open(path, "rb") as fh:
+        return "data:image/webp;base64," + base64.b64encode(fh.read()).decode()
+
 def word_line(name, path):
     """Rebuild one of the game's big const strings from a plain word list."""
     words = open(path, encoding="utf-8").read().split()
@@ -109,6 +113,32 @@ def voice_uris():
                 out[name] = "data:audio/mpeg;base64," + base64.b64encode(fh.read()).decode()
     return out
 
+def font_css():
+    """Title/menu type from fonts/, base64'd so the game stays one file.
+
+    Luckiest Guy is the wordmark, Fredoka is the menu UI. Both OFL, so embedding
+    is fine. Missing files just warn — the CSS falls back to Arial Black.
+    """
+    faces = [
+        ("Luckiest Guy", "luckiest-guy-latin.woff2", "400"),
+        ("Fredoka", "fredoka-latin.woff2", "300 700"),
+    ]
+    out = []
+    for family, fn, weight in faces:
+        path = os.path.join(ROOT, "fonts", fn)
+        if not os.path.exists(path):
+            print("WARNING: fonts/%s missing, using fallback" % fn)
+            continue
+        with open(path, "rb") as fh:
+            b64 = base64.b64encode(fh.read()).decode()
+        out.append(
+            "@font-face{font-family:'%s';font-style:normal;font-weight:%s;"
+            "font-display:swap;src:url(data:font/woff2;base64,%s) format('woff2')}"
+            % (family, weight, b64)
+        )
+    print("fonts:", len(out), "faces,", round(sum(len(f) for f in out) / 1024), "KB")
+    return "".join(out)
+
 tpl = open(SRC, encoding="utf-8").read()
 
 art = {
@@ -118,6 +148,7 @@ art = {
     "__ART_CROWN__": sprite("media-generation-crappy-gold-crown-0-", 240),
     "__ART_PILE__": cutout(os.path.join(SPRITES, "poop-pile.png"), 170),
     "__ART_BG__": jpeg_uri(os.path.join(ROOT, "assets", "porch-bg.png")),
+    "__ART_HERO__": webp_uri(os.path.join(SPRITES, "crappy-superhero-strip.webp")),
 }
 
 out = tpl.replace("/*__DICT_DATA__*/", common_line + "\n" + dict_line + "\n" + freq_line + "\n" + google_line + "\n" + levels_line)
@@ -127,6 +158,8 @@ for k, v in art.items():
 voice = voice_uris()
 assert "__VOICE__" in out, "voice placeholder missing"
 out = out.replace("__VOICE__", json.dumps(voice))
+assert "__FONT_CSS__" in out, "font placeholder missing"
+out = out.replace("/*__FONT_CSS__*/", font_css())
 
 leftover = re.findall(r"__ART_[A-Z]+__", out)
 assert not leftover, leftover

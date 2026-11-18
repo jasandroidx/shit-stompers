@@ -43,7 +43,9 @@ node -e 'const fs=require("fs");const h=fs.readFileSync("index.html","utf8");new
 |---|---|
 | `/*__DICT_DATA__*/` | `const DICT`, `COMMON`, `FREQ_ORDER`, `GOOGLE_ORDER`, `WORD_LEVELS` |
 | `__ART_PLAIN__`, `__ART_EXCITED__`, `__ART_SLEEPY__`, `__ART_CROWN__`, `__ART_PILE__`, `__ART_BG__` | base64 data URIs from `assets/` |
+| `__ART_HERO__` | the title's superhero fly-in: `assets/sprites/crappy-superhero-strip.webp`, a 40-frame transparent WebP strip (16fps) |
 | `__VOICE__` | a JSON object of `"name": "data:audio/mpeg;base64,…"` from `audio/` |
+| `/*__FONT_CSS__*/` | `@font-face` blocks from `fonts/*.woff2` — Luckiest Guy (wordmark) and Fredoka (menu UI), base64'd |
 
 If a placeholder is left unsubstituted the build asserts and fails. That is
 deliberate.
@@ -111,10 +113,26 @@ letters), `onaroll` (8th word), `golden`, `sneaky` (off-board word), `pilebonus`
 
 ## The title sequence
 
-SHIT and STOMPERS slam in on a scripted timeline in CSS (`.l1` / `.l2`
-`slamDown`), and JS fires an `ss-slam` CustomEvent at each impact with
-`detail.n` of 1 or 2. If real impact sounds arrive, bind them to that event —
-do not retime the CSS to match a sound.
+SHIT slams in first, STOMPERS lands under it (both `slamDown`), then Crappy
+flies in and stands on the wordmark, then he says his line, and only then do
+the tag and the rules card come up with START. JS fires an `ss-slam` CustomEvent
+at each impact with `detail.n` of 1 or 2; the thuds are synthesized in the
+`ss-slam` listener — bind sound to that event, do not retime the CSS to match a
+sound. `.ready` on the overlay (which reveals the card) is set when his line
+ends, with a timer fallback.
+
+The wordmark and menu type are Luckiest Guy and Fredoka, inlined as base64 WOFF2
+from `fonts/` by the build (both OFL, so embedding is fine). Without those files
+the build warns and the CSS falls back to Arial Black / Trebuchet.
+
+The whole intro is chained, clip to clip — `audio/poop-announcer-shit.mp3`
+(1.10s) and `poop-announcer-stompers.mp3` (2.30s). SHIT lands at 420ms with
+`announcer-shit`; STOMPERS lands when that line ends with `announcer-stompers`;
+when that second line ends the hero's `.fly` class starts the 2.2s sprite strip
+(`assets/sprites/crappy-superhero-strip.webp`, `steps(39)` over 40 frames — the
+end value is `-97.5%` so the held last frame sits inside the window); on
+`animationend` he bobs and `speak("letsstomp")` fires, and its `onEnd` reveals
+the card. There is no speech bubble any more — the clip is the line.
 
 ## Gotchas learned the hard way
 

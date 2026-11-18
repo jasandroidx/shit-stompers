@@ -43,7 +43,8 @@ node -e 'const fs=require("fs");const h=fs.readFileSync("index.html","utf8");new
 | `data/google20k.txt` | Common-word ordering, used the same way. |
 | `data/word-levels.txt` | How obvious each word is, 0–15, baked in as one character per word. |
 | `assets/porch-bg.png` | The porch behind everything. |
-| `assets/sprites/` | Crappy's poses (plain, excited, sleepy), the gold crown, the pile. |
+| `assets/sprites/` | Crappy's poses (plain, excited, sleepy), the gold crown, the pile, and the superhero fly-in strip for the title. |
+| `fonts/` | Luckiest Guy (wordmark) and Fredoka (menu UI), both OFL — inlined by the build as base64 WOFF2. |
 | `audio/` | Jason's voice clips plus `lines.txt` (what each one says). |
 | `docs/` | Design notes: the Pogo study, the dictionary audit, parked ideas. |
 
