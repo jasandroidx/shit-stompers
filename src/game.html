@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shit Stompers</title>
+<style>
+  :root{
+    --art-plain: url("__ART_PLAIN__");
+    --art-excited: url("__ART_EXCITED__");
+    --art-sleepy: url("__ART_SLEEPY__");
+    --art-crown: url("__ART_CROWN__");
+    --art-pile: url("__ART_PILE__");
+    --bg: url("__ART_BG__");
+    --ink:#3a2410;
+    --cream:#f7e9c9;
+    --cream2:#efdcb3;
+    --wood:#6b3f1d;
+    --wood2:#8a5227;
+    --amber:#f6c453;
+    --green:#7bc86c;
+    --red:#e2634f;
+    --gold:#ffcd4a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{
+    font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+    color:var(--cream);
+    background:#140c06 var(--bg) center/cover fixed no-repeat;
+    padding:18px 12px 40px;
+    display:flex;justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgba(0,0,0,0) 30%, rgba(8,4,2,.55) 100%),
+      linear-gradient(rgba(20,12,6,.18), rgba(12,7,3,.45));
+  }
+  #game{
+    position:relative;z-index:1;width:min(880px,100%);
+    display:flex;flex-direction:column;gap:10px;
+  }
+
+  /* ---------------- HUD ---------------- */
+  #hud{
+    display:flex;align-items:stretch;gap:6px;
+    background:linear-gradient(180deg,rgba(58,34,17,.92),rgba(34,19,9,.94));
+    border:2px solid #7a4a21;border-bottom-width:5px;border-radius:14px;
+    padding:8px 10px;box-shadow:0 10px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,220,160,.18);
+    position:relative;
+  }
+  .stat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0}
+  .stat + .stat{border-left:1px solid rgba(246,196,83,.18)}
+  .label{font-size:10px;letter-spacing:2px;color:#c9a97c;font-weight:700;text-transform:uppercase;white-space:nowrap}
+  .value{font-size:26px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;color:#fff4dc;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+  #time{color:#ffd98a}
+  #time.low{color:#ff8b74;animation:pulse .7s steps(2,end) infinite}
+  #score{color:#a8e88f}
+  #score.pop{animation:scorePop .32s ease-out}
+  .sub{font-size:10px;letter-spacing:1px;color:#a98a63;font-weight:700;white-space:nowrap}
+  #btnSound{
+    flex:0 0 auto;align-self:center;width:34px;height:34px;border-radius:9px;
+    border:2px solid #7a4a21;background:rgba(0,0,0,.25);color:var(--cream);
+    font-size:15px;cursor:pointer;line-height:1;margin-left:2px;
+  }
+  #btnSound:hover{background:rgba(246,196,83,.15)}
+  .lvrow{display:flex;align-items:center;gap:3px}
+  .lvrow button{
+    width:17px;height:17px;padding:0;border-radius:4px;border:1px solid rgba(255,217,138,.45);
+    background:rgba(255,255,255,.08);color:#ffd98a;font-size:8px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-family:inherit;
+  }
+  .lvrow button:hover{background:rgba(255,255,255,.2)}
+  .lvrow button:disabled{opacity:.3;cursor:default;background:rgba(255,255,255,.06)}
+  .lvrow b{font-size:20px;color:#ffd98a;min-width:14px;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+
+  /* ---------------- staging ---------------- */
+  #stagingWrap{position:relative}
+  #staging{
+    min-height:74px;display:flex;align-items:center;justify-content:center;gap:8px;
+    flex-wrap:wrap;padding:9px 12px 15px;border-radius:14px;
+    background:
+      linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,.12)),
+      repeating-linear-gradient(90deg,rgba(120,74,33,.5) 0 2px,transparent 2px 38px),
+      rgba(52,31,15,.72);
+    border:2px solid #5e3a1c;border-bottom-width:5px;
+    box-shadow:inset 0 6px 14px rgba(0,0,0,.45);
+  }
+  #staging.shake{animation:shake .38s}
+  #staging .hint{color:#bfa17a;font-weight:700;font-size:14px;text-align:center;line-height:1.35}
+  .slot{
+    width:52px;height:56px;border-radius:9px;border:2px solid #8a5227;
+    background:linear-gradient(180deg,#fdf3d8,#e8d3a4);
+    color:#40260f;font-family:inherit;font-size:30px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:0 3px 0 #5b3417, inset 0 1px 0 #fff8e2;
+    font-variant-numeric:tabular-nums;
+  }
+  .slot:hover{transform:translateY(-2px)}
+  .slot.new{animation:slotIn .2s cubic-bezier(.2,1.4,.5,1)}
+  #msg{
+    position:absolute;left:50%;bottom:2px;transform:translate(-50%,6px);
+    font-size:13px;font-weight:800;letter-spacing:.3px;white-space:nowrap;
+    color:#ffb4a3;opacity:0;transition:opacity .18s, transform .18s;pointer-events:none;
+    text-shadow:0 1px 0 rgba(0,0,0,.6);
+  }
+  #msg.show{opacity:1;transform:translate(-50%,0)}
+  #msg.good{color:#b5f0a0}
+  #msg.warn{color:#ffd98a}
+
+  /* ---------------- tiles ---------------- */
+  #tiles{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:6px;
+    padding:6px 2px 2px;
+  }
+  .tile{
+    background:none;border:0;padding:0;cursor:pointer;font-family:inherit;
+    display:flex;flex-direction:column;align-items:center;gap:1px;
+    transition:transform .12s;position:relative;
+  }
+  .tile .critter{position:relative;width:100%;max-width:104px;aspect-ratio:1;display:block}
+  .tile .critter img{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+    transition:opacity .14s, transform .18s cubic-bezier(.2,1.3,.4,1);
+    filter:drop-shadow(0 6px 6px rgba(0,0,0,.45));
+  }
+  .tile .excited,.tile .sleepy{opacity:0}
+  .tile[data-state="picked"] .plain,.tile[data-state="sleepy"] .plain{opacity:0}
+  .tile[data-state="picked"] .excited{opacity:1}
+  .tile[data-state="picked"] .critter{transform:translateY(-12px) scale(1.07)}
+  .tile[data-state="sleepy"] .sleepy{opacity:1}
+  .tile[data-state="sleepy"] .critter{transform:translateY(3px) rotate(-3deg)}
+  .tile[data-state="sleepy"]{opacity:.45}
+  .tile[data-state="sleepy"] .plaque{opacity:.6}
+  .tile:hover .critter{transform:translateY(-5px)}
+  .tile:disabled{cursor:default}
+  .tile.squash .critter{animation:squash .34s ease-out}
+  .plaque{
+    width:min(88%,88px);height:62px;border-radius:8px;border:2px solid #8a5227;
+    background:linear-gradient(180deg,#fdf3d8,#e9d5a7);
+    color:#40260f;font-size:34px;font-weight:800;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 0 #5b3417, inset 0 1px 0 #fff8e2;
+    transition:transform .18s, box-shadow .18s;
+  }
+  .tile[data-state="picked"] .plaque{
+    transform:translateY(-2px);box-shadow:0 7px 0 #5b3417, 0 0 22px rgba(246,196,83,.45), inset 0 1px 0 #fff8e2;
+    border-color:#c98a2e;
+  }
+
+  /* ---------------- buttons ---------------- */
+  #buttons{display:flex;gap:8px;justify-content:center;align-items:stretch;flex-wrap:wrap}
+  .btn{
+    font-family:inherit;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+    color:#2c1a0a;border:2px solid #7a4a21;border-bottom-width:5px;border-radius:12px;
+    background:linear-gradient(180deg,#e9cfa0,#cfae76);
+    padding:10px 18px;font-size:15px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;
+    box-shadow:0 3px 0 rgba(0,0,0,.35);
+    transition:transform .08s, filter .15s;
+  }
+  .btn:hover{filter:brightness(1.06)}
+  .btn:active{transform:translateY(3px);border-bottom-width:2px}
+  .btn.stomp{
+    background:linear-gradient(180deg,#ffd98a,#f0a93c);border-color:#a95f1c;
+    padding:11px 26px;font-size:17px;color:#3a1e06;
+  }
+  .btn .key{
+    font-size:10px;letter-spacing:.5px;font-weight:700;color:rgba(44,26,10,.55);
+    border:1px solid rgba(44,26,10,.25);border-radius:4px;padding:1px 4px;text-transform:none;
+  }
+  .btn:disabled{opacity:.5;cursor:default;filter:none}
+
+  /* ---------------- word board ---------------- */
+  #board{
+    position:relative;
+    background:
+      repeating-linear-gradient(0deg, rgba(176,150,110,.05) 0 1px, transparent 1px 3px),
+      linear-gradient(180deg,rgba(249,237,209,.98),rgba(233,213,175,.98));
+    color:var(--ink);border:2px solid #7a4a21;border-bottom-width:5px;border-radius:14px;
+    padding:10px 14px 12px;
+    box-shadow:0 14px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.75);
+  }
+  #board h2{
+    font-size:11px;letter-spacing:2.5px;color:#8a6a3f;text-align:center;
+    text-transform:uppercase;margin-bottom:8px;font-weight:800;
+  }
+  #board h2 span{color:#b08b52;letter-spacing:1px}
+  #goldCard{
+    width:max-content;margin:0 0 8px auto;display:flex;align-items:center;gap:6px;
+    background:linear-gradient(180deg,#ffe9a8,#f7cf5e);border:2px solid #c99a1e;border-radius:9px;
+    padding:3px 10px;font-size:12px;font-weight:800;color:#7a5a06;letter-spacing:1.5px;
+    box-shadow:0 3px 8px rgba(0,0,0,.22);animation:foundPop .35s;
+  }
+  #goldCard b{font-size:14px;letter-spacing:2px}
+  #goldCard span{font-size:10px;color:#a0700f;letter-spacing:.5px}
+  #goldCard[hidden]{display:none}
+  #grid .cols4{
+    display:grid;grid-auto-flow:column;grid-template-rows:repeat(4,29px);
+    gap:6px 6px;justify-content:start;
+  }
+  /* Empty slots are pressed into the paper, found words are stamped on top. */
+  .wbox{
+    position:relative;
+    min-width:36px;height:29px;padding:0 7px;border-radius:5px;
+    border:0;background:rgba(198,176,140,.22);
+    box-shadow:inset 0 2px 4px rgba(122,74,33,.20), inset 0 -1px 0 rgba(255,255,255,.65);
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:800;letter-spacing:2px;color:transparent;
+    transition:background .2s, color .2s, transform .2s;
+  }
+  .wbox.found{
+    color:#2c6b23;background:#e9f3d7;
+    box-shadow:inset 0 0 0 2px #6ba444, 0 2px 0 rgba(122,74,33,.15);
+    transform:rotate(-1.4deg);
+    animation:stampIn .34s cubic-bezier(.2,1.5,.45,1) both;
+  }
+  .wbox.found:nth-child(3n+2){transform:rotate(1.1deg)}
+  .wbox.found:nth-child(3n){transform:rotate(-.5deg)}
+  .wbox.gold{
+    color:#7a5a06;background:linear-gradient(180deg,#ffe9a8,#f7cf5e);
+    box-shadow:inset 0 0 0 2px #c99a1e, 0 0 0 3px rgba(255,205,74,.35);
+    transform:rotate(-2deg);
+  }
+  .wbox.gold::after{content:"★";position:absolute;margin:-22px 0 0 34px;font-size:10px;color:#c99a1e}
+  .wbox.missed{color:#a08a6b;background:rgba(214,196,164,.35);letter-spacing:1px;text-decoration:line-through}
+  .wbox.missed.gold{color:#a07a2b}
+  @keyframes stampIn{
+    0%{transform:scale(1.35) rotate(-7deg);opacity:0}
+    55%{transform:scale(.97) rotate(-1.4deg);opacity:1}
+    100%{transform:scale(1) rotate(-1.4deg)}
+  }
+
+  /* ---------------- bonus ---------------- */
+  #bonusBox{
+    background:linear-gradient(180deg,rgba(24,46,54,.95),rgba(16,32,38,.95));
+    border:2px solid #2f6470;border-bottom-width:5px;border-radius:14px;
+    padding:9px 12px;box-shadow:0 10px 24px rgba(0,0,0,.4);
+  }
+  #bonusBox h2{font-size:11px;letter-spacing:2.5px;color:#7fd4cf;text-align:center;text-transform:uppercase;margin-bottom:6px;font-weight:800}
+  #bonusList{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+  .bword{
+    background:#e8fbf7;color:#175a55;border:2px solid #43a49b;border-radius:6px;
+    padding:2px 8px;font-size:13px;font-weight:800;letter-spacing:1px;
+  }
+  .bword b{font-weight:800;color:#0f7a6d;font-size:11px}
+
+  /* ---------------- pile track ---------------- */
+  #pileTrack{padding:26px 4px 0;margin-top:2px}
+  #pileRow{display:flex;justify-content:center;gap:2px}
+  .pile{flex:1 1 0;max-width:64px;display:flex;flex-direction:column;align-items:center;position:relative}
+  .pile .dirt{
+    width:100%;aspect-ratio:1.45;border-radius:50%;
+    background:radial-gradient(ellipse at 50% 35%, #4a2c14 0%, #33200f 70%, rgba(0,0,0,0) 72%);
+    border:0;position:relative;
+  }
+  .pile img{
+    position:absolute;left:50%;bottom:52%;transform:translateX(-50%);
+    width:84%;height:auto;filter:drop-shadow(0 3px 3px rgba(0,0,0,.5));
+    transition:transform .28s cubic-bezier(.3,1.6,.5,1), opacity .28s;
+  }
+  .pile.stomped img{transform:translateX(-50%) scale(1.25,.18) translateY(52%);opacity:.65}
+  .pile.stomped .dirt{box-shadow:0 0 0 2px rgba(0,0,0,.25) inset}
+  .pile .tag{
+    font-size:9px;font-weight:800;letter-spacing:.5px;color:#ffd98a;
+    text-shadow:0 1px 2px rgba(0,0,0,.8);white-space:nowrap;height:11px;
+  }
+  .pile .splat{
+    position:absolute;left:50%;bottom:58%;transform:translate(-50%,0) scale(.4);
+    font-size:13px;opacity:0;pointer-events:none;
+  }
+  .pile.stomped .splat{animation:splat .5s forwards}
+
+  #revealBar{
+    display:none;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+    background:linear-gradient(180deg,rgba(58,34,17,.95),rgba(34,19,9,.96));
+    border:2px solid #7a4a21;border-bottom-width:5px;border-radius:14px;
+    padding:10px 14px;box-shadow:0 10px 24px rgba(0,0,0,.5);
+    animation:barIn .3s ease-out;
+  }
+  #revealBar.show{display:flex}
+  #revealBar .btn{order:0;flex:0 0 auto}
+  #revealBar .txt{font-weight:800;letter-spacing:.5px;font-size:15px;color:#ffd98a}
+  #revealBar .txt small{display:block;font-size:12px;font-weight:600;letter-spacing:0;color:#c9a97c;margin-top:1px}
+
+  /* ---------------- overlays ---------------- */
+  .overlay{
+    position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+    padding:16px;background:rgba(10,6,2,.62);backdrop-filter:blur(3px);
+  }
+  .overlay.hidden{display:none}
+  .panel{
+    position:relative;width:min(560px,100%);max-height:92vh;overflow:auto;
+    background:linear-gradient(180deg,#fbf0d6,#ecd9b4);
+    border:3px solid #7a4a21;border-bottom-width:8px;border-radius:18px;
+    padding:22px 24px 20px;color:var(--ink);text-align:center;
+    box-shadow:0 22px 50px rgba(0,0,0,.55);
+  }
+  .panel h1{
+    font-size:38px;line-height:1;letter-spacing:2px;color:#7a4a21;
+    text-transform:uppercase;margin-bottom:4px;
+    text-shadow:0 2px 0 #fff6dd, 0 4px 0 rgba(122,74,33,.25);
+  }
+  .panel h1 .pop{color:#c0702a}
+  .panel .tag{font-size:13px;color:#8a6a3f;font-weight:700;letter-spacing:.3px;margin-bottom:14px}
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:left;margin:0 0 14px}
+  .col{background:rgba(255,255,255,.45);border:1px solid rgba(122,74,33,.22);border-radius:10px;padding:8px 10px}
+  .col h3{font-size:10px;letter-spacing:1.6px;color:#a3702f;text-transform:uppercase;margin-bottom:4px}
+  .col p{font-size:12.5px;line-height:1.35;color:#4c3218}
+  .panel .fine{font-size:11.5px;color:#8a6a3f;line-height:1.5;margin:6px 0 12px}
+  .panel .mascot{width:96px;margin:0 auto -4px;display:block;filter:drop-shadow(0 6px 6px rgba(0,0,0,.25))}
+  .dontshow{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:#8a6a3f;font-weight:700;margin-bottom:12px;cursor:pointer}
+  .dontshow input{width:15px;height:15px;accent-color:#a3702f;cursor:pointer}
+  .panel .btn{justify-content:center;min-width:200px}
+
+  /* ---------------- title screen life ---------------- */
+  #titleOverlay{
+    overflow-y:auto;overflow-x:hidden;flex-direction:column;gap:12px;
+    justify-content:flex-start;padding:18px 16px;
+  }
+  #titleOverlay .brand{margin-top:auto;flex:0 0 auto}
+  #titleOverlay .panel{margin-bottom:auto;max-height:none;flex:0 0 auto}
+
+  /* ---- the sign out front ---- */
+  .brand{position:relative;z-index:3;text-align:center;padding:0 12px}
+  .brand::before{
+    content:"";position:absolute;inset:-18% -26% -14%;z-index:-1;pointer-events:none;
+    background:radial-gradient(58% 58% at 50% 58%, rgba(255,178,58,.26), rgba(255,178,58,0) 72%);
+  }
+  .brand.boom{animation:boom .2s ease-out}
+  @keyframes boom{
+    0%{transform:translate(0,0)}
+    22%{transform:translate(-6px,4px) rotate(-.45deg)}
+    48%{transform:translate(5px,-3px) rotate(.35deg)}
+    72%{transform:translate(-2px,2px)}
+    100%{transform:none}
+  }
+  .brand .mascot{
+    width:74px;margin:0 auto 10px;display:block;
+    filter:drop-shadow(0 8px 9px rgba(0,0,0,.55));
+    animation:crappyFlyIn .74s cubic-bezier(.22,.9,.2,1) 1.05s both,
+              mascotBob 3.6s ease-in-out 1.95s infinite;
+  }
+  @keyframes crappyFlyIn{
+    0%{opacity:0;transform:translate(-165%,-46px) rotate(-40deg) scale(.66)}
+    62%{opacity:1;transform:translate(10px,7px) rotate(10deg) scale(1.07)}
+    82%{transform:translate(-4px,0) rotate(-4deg) scale(1)}
+    100%{opacity:1;transform:none}
+  }
+  h1.logo{
+    margin:0;line-height:.88;text-transform:uppercase;letter-spacing:0;
+    font-family:Impact,"Haettenschweiler","Arial Narrow Bold","Franklin Gothic Heavy",
+      "Arial Black",system-ui,sans-serif;font-weight:400;
+  }
+  .logo b{
+    display:inline-block;font-weight:inherit;position:relative;
+    background:linear-gradient(180deg,#fff6d3 4%,#ffd071 38%,#e0932f 66%,#9c5a19 100%);
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent;-webkit-text-fill-color:transparent;
+    filter:drop-shadow(0 2px 0 #3b1b07) drop-shadow(0 5px 0 #280f04)
+           drop-shadow(0 10px 11px rgba(0,0,0,.55));
+  }
+
+  /* ---- SHIT: brown, wet, leaking ---- */
+  .logo .l1{
+    display:block;position:relative;z-index:2;
+    font-size:clamp(64px,20vmin,142px);line-height:1;letter-spacing:.015em;
+    margin:0 0 7px;
+    animation:slamDown .5s cubic-bezier(.18,.9,.18,1) .12s both;
+  }
+  .logo .l1 b{
+    background-image:linear-gradient(176deg,#a97240 2%,#82501f 26%,#5f3611 58%,#3f210a 100%);
+    filter:drop-shadow(0 2px 0 #2b1505) drop-shadow(0 6px 0 #1d0e03)
+           drop-shadow(0 11px 12px rgba(0,0,0,.6));
+  }
+  .logo .l1 b::before,
+  .logo .l1 b::after{
+    content:"";position:absolute;top:84%;width:.12em;z-index:-1;
+    transform-origin:top center;
+    background:linear-gradient(180deg,#7a4517,#4f2a0d 62%,#341a07);
+    border-radius:.04em .04em .5em .5em / .04em .04em 1em 1em;
+  }
+  .logo .l1 b::after{animation:ooze 5.4s ease-in-out infinite alternate}
+  @keyframes ooze{from{transform:scaleY(.82)}to{transform:scaleY(1.16)}}
+  .logo .l1 b:nth-child(1)::after{left:24%;height:.26em;animation-delay:-.8s}
+  .logo .l1 b:nth-child(1)::before{left:61%;height:.14em;width:.085em}
+  .logo .l1 b:nth-child(2)::after{left:38%;height:.38em;width:.105em;animation-delay:-2.1s}
+  .logo .l1 b:nth-child(2)::before{left:73%;height:.18em;width:.085em}
+  .logo .l1 b:nth-child(3)::after{left:29%;height:.22em;animation-delay:-3.4s}
+  .logo .l1 b:nth-child(3)::before{left:65%;height:.32em;width:.095em}
+  .logo .l1 b:nth-child(4)::after{left:50%;height:.4em;width:.105em;animation-delay:-1.5s}
+  .logo .l1 b:nth-child(4)::before{left:17%;height:.16em;width:.085em}
+  .logo .l1 b:nth-child(odd){transform:rotate(-1.6deg)}
+  .logo .l1 b:nth-child(even){transform:translateY(-.035em) rotate(1.3deg)}
+
+  /* ---- STOMPERS: gold, lands second ---- */
+  .logo .l2{
+    display:block;position:relative;z-index:1;
+    font-size:clamp(54px,17vmin,118px);line-height:1;letter-spacing:-.012em;
+    animation:slamDown .54s cubic-bezier(.18,.9,.18,1) .62s both;
+  }
+  .logo .l2 b:nth-child(1){transform:translateY(.015em) rotate(-2.4deg)}
+  .logo .l2 b:nth-child(2){transform:translateY(-.03em) rotate(1.6deg)}
+  .logo .l2 b:nth-child(3){transform:translateY(.02em) rotate(-1.2deg)}
+  .logo .l2 b:nth-child(4){transform:translateY(-.035em) rotate(2.2deg)}
+  .logo .l2 b:nth-child(5){transform:translateY(.01em) rotate(-2deg)}
+  .logo .l2 b:nth-child(6){transform:translateY(-.025em) rotate(1.4deg)}
+  .logo .l2 b:nth-child(7){transform:translateY(.02em) rotate(-1.6deg)}
+  .logo .l2 b:nth-child(8){transform:translateY(-.015em) rotate(2.4deg)}
+
+  @keyframes slamDown{
+    0%{opacity:0;transform:translateY(-96px) scale(1.5) rotate(-4deg)}
+    58%{opacity:1;transform:translateY(8px) scale(.965) rotate(.9deg)}
+    80%{transform:translateY(-3px) scale(1.006)}
+    100%{opacity:1;transform:none}
+  }
+  .brand .tag{
+    margin-top:14px;font-size:11.5px;font-weight:800;letter-spacing:.4em;
+    text-transform:uppercase;color:#ffe2a8;text-shadow:0 2px 7px rgba(0,0,0,.8);
+    animation:tagIn .5s ease-out 1.55s both;
+  }
+  @keyframes tagIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (max-height:720px){
+    .brand .mascot{width:58px;margin-bottom:0}
+    .logo .l1{font-size:clamp(50px,15vmin,96px)}
+    .logo .l2{font-size:clamp(40px,11vmin,84px)}
+    .brand .tag{margin-top:7px;font-size:10.5px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .brand .mascot,.brand .tag,.logo .l1,.logo .l2,#titleOverlay .panel,
+    .logo .l1 b::after{animation:none}
+  }
+  #titleOverlay::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    box-shadow:inset 0 0 170px 46px rgba(0,0,0,.58);
+  }
+  .fireflies{position:absolute;inset:0;pointer-events:none;z-index:1}
+  .fireflies i{
+    position:absolute;width:5px;height:5px;border-radius:50%;background:#ffe6a0;
+    box-shadow:0 0 9px 2px rgba(255,214,120,.7);opacity:0;
+    animation:fly 9s ease-in-out infinite;
+  }
+  .fireflies i:nth-child(1){left:9%;bottom:18%;animation-delay:.2s}
+  .fireflies i:nth-child(2){left:18%;bottom:9%;animation-delay:1.9s;width:4px;height:4px}
+  .fireflies i:nth-child(3){left:29%;bottom:24%;animation-delay:3.4s}
+  .fireflies i:nth-child(4){right:12%;bottom:15%;animation-delay:.9s;width:4px;height:4px}
+  .fireflies i:nth-child(5){right:22%;bottom:27%;animation-delay:2.6s}
+  .fireflies i:nth-child(6){right:31%;bottom:7%;animation-delay:4.4s;width:3px;height:3px}
+  .fireflies i:nth-child(7){left:47%;bottom:11%;animation-delay:5.6s;width:4px;height:4px}
+  @keyframes fly{
+    0%{opacity:0;transform:translate(0,0) scale(.8)}
+    18%{opacity:.95}
+    55%{opacity:.5;transform:translate(20px,-30px) scale(1)}
+    82%{opacity:.8;transform:translate(-12px,-48px) scale(.9)}
+    100%{opacity:0;transform:translate(8px,-64px) scale(.8)}
+  }
+  @keyframes panelIn{
+    0%{transform:scale(.94) translateY(14px);opacity:0}
+    62%{transform:scale(1.012) translateY(0);opacity:1}
+    100%{transform:scale(1)}
+  }
+  #titleOverlay .panel{animation:panelIn .44s cubic-bezier(.22,1.25,.4,1) 1.7s both;z-index:2}
+  @keyframes mascotBob{
+    0%,100%{transform:translateY(0) rotate(0)}
+    45%{transform:translateY(-6px) rotate(-1.6deg)}
+    70%{transform:translateY(-2px) rotate(.8deg)}
+  }
+  #titleOverlay .mascot{animation:mascotBob 3.6s ease-in-out infinite}
+  @keyframes titleBob{
+    0%,100%{transform:scale(1) rotate(0)}
+    48%{transform:scale(1.03) rotate(-.7deg)}
+  }
+  #titleOverlay h1 .pop{display:inline-block;animation:titleBob 5.2s ease-in-out infinite}
+  @keyframes ctaBreath{
+    0%,100%{box-shadow:0 6px 0 #7a4a21, 0 10px 18px rgba(0,0,0,.35)}
+    50%{box-shadow:0 6px 0 #7a4a21, 0 10px 26px rgba(255,196,90,.45)}
+  }
+  #titleOverlay #btnPlay{animation:ctaBreath 3.2s ease-in-out infinite}
+  .panel.small{width:min(380px,100%);padding:20px 20px 18px}
+  .panel.small h1{font-size:27px}
+  .panel .row{display:flex;gap:10px;justify-content:center;margin-top:14px}
+  .panel .row .btn{min-width:0;flex:1 1 0;padding:10px 12px}
+  table{width:100%;border-collapse:collapse;margin:6px 0 14px;font-size:14px}
+  td{padding:5px 2px;text-align:left;border-bottom:1px dashed rgba(122,74,33,.22)}
+  td:last-child{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+  tr.total td{border-bottom:0;font-size:16px;color:#7a4a21;padding-top:8px;text-transform:uppercase;letter-spacing:.5px}
+  tr.grand td{color:#2f6b2a;font-size:17px;font-weight:800;padding-top:2px}
+  #endLine{font-size:14.5px;line-height:1.45;color:#4c3218;margin-bottom:10px}
+  #endEmoji{font-size:34px;line-height:1;margin-bottom:2px}
+  .rule{height:1px;background:rgba(122,74,33,.18);margin:10px 0}
+
+  /* flying gold */
+  .flygold{
+    position:fixed;left:50%;bottom:38%;width:110px;z-index:60;pointer-events:none;
+    filter:drop-shadow(0 8px 12px rgba(0,0,0,.5));animation:flyGold 1.25s ease-in forwards;
+  }
+
+  /* ---------------- keyframes ---------------- */
+  @keyframes pulse{50%{opacity:.4}}
+  @keyframes scorePop{0%{transform:scale(1)}45%{transform:scale(1.22)}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-7px)}35%{transform:translateX(6px)}55%{transform:translateX(-4px)}75%{transform:translateX(3px)}}
+  @keyframes slotIn{from{transform:translateY(26px) scale(.7);opacity:0}to{transform:none;opacity:1}}
+  @keyframes foundPop{0%{transform:scale(.85)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+  @keyframes squash{0%{transform:scale(1,1)}35%{transform:scale(1.22,.68) translateY(6px)}70%{transform:scale(.94,1.06)}100%{transform:scale(1,1)}}
+  @keyframes splat{0%{opacity:0;transform:translate(-50%,0) scale(.3)}30%{opacity:1;transform:translate(-50%,-6px) scale(1.1)}100%{opacity:0;transform:translate(-50%,-14px) scale(1.3)}}
+  @keyframes barIn{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  @keyframes flyGold{
+    0%{transform:translate(-50%,0) scale(.6) rotate(-6deg);opacity:0}
+    18%{transform:translate(-50%,-10px) scale(1.08) rotate(3deg);opacity:1}
+    100%{transform:translate(60%,-46vh) scale(.35) rotate(12deg);opacity:0}
+  }
+
+  /* ---------------- responsive ---------------- */
+  @media (max-width:640px){
+    body{padding:10px 8px 30px}
+    #hud{flex-wrap:nowrap;gap:1px;padding:6px 6px}
+    .stat{flex:1 1 0}
+    .stat + .stat{border-left:0}
+    .label{font-size:8.5px;letter-spacing:1px}
+    .value{font-size:19px}
+    .sub{font-size:8.5px;letter-spacing:.5px}
+    #btnSound{width:26px;height:26px;font-size:12px;border-radius:7px}
+    #tiles{grid-template-columns:repeat(6,1fr);gap:3px}
+    .tile .critter{max-width:100%}
+    .plaque{width:100%;height:46px;font-size:25px;border-radius:6px;box-shadow:0 3px 0 #5b3417, inset 0 1px 0 #fff8e2}
+    #buttons{gap:6px}
+    .btn{flex:1 1 30%;padding:9px 10px;font-size:12.5px;justify-content:center}
+    .btn.stomp{flex:1 1 100%;order:-1}
+    .btn .key{display:none}
+    .cols{grid-template-columns:1fr;gap:6px}
+    .col p{font-size:12px}
+    #pileRow{gap:0}
+    #pileTrack{padding-top:22px}
+    .pile{max-width:none}
+    .pile .tag{font-size:8px;letter-spacing:0;height:9px}
+    .panel h1{font-size:29px}
+    .panel{padding:18px 14px 16px}
+    #grid .cols4{grid-template-rows:repeat(4,26px);gap:4px 4px}
+    .wbox{height:26px;font-size:12.5px;min-width:30px;padding:0 5px}
+    .lvrow button{width:15px;height:15px;font-size:7px}
+    .lvrow b{font-size:17px;min-width:12px}
+  }
+  @media (max-width:400px){
+    #tiles{gap:2px}
+    .plaque{height:40px;font-size:21px}
+  }
+  .stat[hidden]{display:none}
+  .stat.jar{flex:0 0 auto;min-width:44px}
+  .stat.jar .label{font-size:9px;letter-spacing:1px}
+  .stat.jar .value{color:#f0c46a;font-size:15px}
+  @keyframes jarPop{0%{transform:scale(1)}35%{transform:scale(1.22)}70%{transform:scale(.97)}100%{transform:scale(1)}}
+  .stat.jar.flash .value{display:inline-block;animation:jarPop .5s ease-out}
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms !important;transition-duration:.001ms !important}
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+  <header id="hud">
+    <div class="stat"><span class="label">Skill</span><span class="lvrow"><button id="lvlDown" type="button" aria-label="Lower skill level">&#9664;</button><b id="level">1</b><button id="lvlUp" type="button" aria-label="Raise skill level">&#9654;</button></span></div>
+    <div class="stat"><span class="label">Time</span><span class="value" id="time">2:30</span></div>
+    <div class="stat"><span class="label">Stomped</span><span class="value" id="foundCount">0 / 12</span></div>
+    <div class="stat"><span class="label">Score</span><span class="value" id="score">0</span><span class="sub" id="gameTotal">game 0</span></div>
+    <div class="stat jar" id="jarStat" hidden title="Swear jar"><span class="label">Swear</span><span class="value" id="jarVal">$0.00</span></div>
+    <button id="btnSound" type="button" aria-label="Toggle sound">&#128266;</button>
+  </header>
+
+  <div id="stagingWrap">
+    <div id="staging"></div>
+    <div id="msg" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="tiles"></div>
+
+  <div id="buttons">
+    <button class="btn stomp" id="btnEnter" type="button">&#128165; Stomp <span class="key">Enter</span></button>
+    <button class="btn" id="btnMix" type="button">&#127744; Shake <span class="key">Space</span></button>
+    <button class="btn" id="btnClear" type="button">&#129514; Wipe <span class="key">Bksp</span></button>
+  </div>
+
+  <section id="board" aria-label="Words to find">
+    <h2>Words to find <span id="boardCount">0 / 12</span></h2>
+    <div id="goldCard" hidden>&#9733; <b id="goldTxt"></b> <span>+100</span></div>
+    <div id="grid"></div>
+  </section>
+
+  <section id="bonusBox" hidden aria-label="Secret stinkers">
+    <h2>Secret stinkers &mdash; <span id="bonusCount"></span></h2>
+    <div id="bonusList"></div>
+  </section>
+
+  <section id="pileTrack" aria-label="Bonus piles">
+    <div id="pileRow"></div>
+  </section>
+
+  <div id="revealBar">
+    <div class="txt">Time&rsquo;s up! <small>Grey words are the ones that got away.</small></div>
+    <button class="btn stomp" id="btnContinue" type="button">Continue &rsaquo;</button>
+  </div>
+</div>
+
+<!-- title / how to play -->
+<div class="overlay" id="titleOverlay">
+  <div class="fireflies" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="brand">
+    <img class="mascot" id="mascot" alt="">
+    <h1 class="logo" aria-label="Shit Stompers">
+      <span class="l1" aria-hidden="true"><b>S</b><b>H</b><b>I</b><b>T</b></span>
+      <span class="l2" aria-hidden="true"><b>S</b><b>T</b><b>O</b><b>M</b><b>P</b><b>E</b><b>R</b><b>S</b></span>
+    </h1>
+    <div class="tag">a silly little word game</div>
+  </div>
+  <div class="panel">
+    <div class="cols">
+      <div class="col">
+        <h3>To play</h3>
+        <p>Tap the stinkers to spell a word, then STOMP it. Three letters or more. Enter stomps, Space shakes, Backspace wipes.</p>
+      </div>
+      <div class="col">
+        <h3>To win</h3>
+        <p>Stomp every word on the list before the clock runs out. Hidden bonus words are icing &mdash; they score, but you don&rsquo;t need them.</p>
+      </div>
+      <div class="col">
+        <h3>To score</h3>
+        <p>20 points a letter at skill 1, 30 at 2, 40 at 3. The golden word pays 100 extra. The 4th word and the last word each pay a pile bonus. Rude words drop 25&cent; in the swear jar &mdash; it costs you nothing.</p>
+      </div>
+    </div>
+    <p class="fine">Skill level sets the clock and the board: 2:30 with 12 words, 2:15 with 16, or 2:00 with 22. Your own dictionary &mdash; no weird Scrabble words on the list, and no word filter either. Round 1 is always the same starter rack.</p>
+    <label class="dontshow"><input type="checkbox" id="dontShow"> Don&rsquo;t show this again</label>
+    <button class="btn stomp" id="btnPlay" type="button">Start stomping &rsaquo;</button>
+  </div>
+</div>
+
+<!-- skill level confirmation -->
+<div class="overlay hidden" id="confirmOverlay">
+  <div class="panel small">
+    <h1>Change skill?</h1>
+    <p class="fine" id="confirmText">This will end your current game. Are you sure?</p>
+    <div class="row">
+      <button class="btn" id="btnNo" type="button">Never mind</button>
+      <button class="btn stomp" id="btnYes" type="button">Yes, switch</button>
+    </div>
+  </div>
+</div>
+
+<!-- end of round -->
+<div class="overlay hidden" id="endOverlay">
+  <div class="panel">
+    <div id="endEmoji">&#128169;</div>
+    <h1 id="endTitle">Time&rsquo;s up</h1>
+    <p id="endLine"></p>
+    <table>
+      <tr><td>Word score</td><td id="rWord">0</td></tr>
+      <tr><td>Secret stinkers</td><td id="rBonus">0</td></tr>
+      <tr><td>Golden word</td><td id="rGold">0</td></tr>
+      <tr><td>Pile bonuses</td><td id="rPile">0</td></tr>
+      <tr><td>Swear jar</td><td id="rJar">$0.00</td></tr>
+      <tr><td>Time remaining bonus</td><td id="rTime">0</td></tr>
+      <tr class="total"><td>Round total</td><td id="rTotal">0</td></tr>
+      <tr class="grand"><td>Game total</td><td id="rGame">0</td></tr>
+    </table>
+    <button class="btn stomp" id="btnNew" type="button">Next round &rsaquo;</button>
+  </div>
+</div>
+
+<script>
+/*__DICT_DATA__*/
+
+/* ---------------- profanity, unfiltered ---------------- */
+// Jason's rule, and it holds here: not one word in this game is blocked. Every
+// swear word a player can spell is scored exactly like any other word. This
+// list is merged into the dictionary *before* any lookup table is built, so
+// these words are playable on any rack that can spell them, and on a rack that
+// spells one of them as its six-letter word it can be the golden word too.
+const CRUDE_WORDS = ("ass asses assed asshat arse arses balls ballsy balling bollix bimbo bimbos bint bints bitch bitchy bitchin bugger buggers bummer cack cock cocks cocked cocker cocky crap craps crappy crapper crud cruds cum cums cunt cunts damn damns damned damner dammit dick dicks dicky dildo dildos dork dorks dorky fag fags fanny fart farts farted feck fecks fuck fucks fucked fucker git gits hell hells idiot idiots jism jizz jizzes knob knobs lesbo minge minges moron morons muff muffs nob nobs pansy penis piss pisses pissed pisser pissy poof poofs poop poops poopy pooper prat prats prick pricks pube pubes pussy queef queefs quim quims retard retards rimjob screw screws shag shags shit shits shite shites shitty skank skanks slut sluts slutty snatch sod sods sodomy spunk spunks suck sucks sucked sucker tart tarts tit tits titty tittie turd turds twat twats twit twits vag vagina wank wanks wanked wanker whore whores").split(" ");
+// 3-6 letters only: a longer word can never be spelled from a six-letter rack.
+for (const w of CRUDE_WORDS) if (w.length <= 6 && !DICT.includes(w)) DICT.push(w);
+
+const DICT_SET = new Set(DICT);
+const BY_KEY = new Map();
+for (const w of DICT) {
+  const k = w.split("").sort().join("");
+  if (!BY_KEY.has(k)) BY_KEY.set(k, []);
+  BY_KEY.get(k).push(w);
+}
+const SIX_LETTER = DICT.filter(w => w.length === 6);
+
+const COMMON_SET = new Set(COMMON);
+
+const ART = {
+  plain: "__ART_PLAIN__",
+  excited: "__ART_EXCITED__",
+  sleepy: "__ART_SLEEPY__",
+  crown: "__ART_CROWN__"
+};
+
+// ---------- SWEAR-WORD BONUS HOOK ----------
+// Every rude word in CRUDE_WORDS above. If a submitted word is in this set the
+// game calls onSwearWord(word) after scoring it — whether the word was laid out
+// on the board or found as a bonus word. No filtering anywhere: Jason and his
+// mom spell out the swear words and laugh about it.
+// The tame ones are words, not swears: they are still accepted and scored like
+// everything else, they just don't earn the flash.
+const TAME_WORDS = new Set("assed balling bimbo bimbos bint bints bollix bummer cack crud cruds dork dorks dorky git gits idiot idiots lesbo moron morons muff muffs pansy prat prats retard retards screw screws suck sucked sucker twit twits".split(" "));
+const SWEAR_SET = new Set(CRUDE_WORDS.filter(w => w.length <= 6 && !TAME_WORDS.has(w)));
+
+// Pogo's board size per skill level, and its bonus flags. Levels 1-2 were
+// observed on the real game (12 words / 20+50 flags, 16 words / 30+75);
+// level 3 was never reached, so 22 words and 40/100 are extrapolated.
+const LEVEL_WORDS = { 1: 12, 2: 16, 3: 22 };
+const LEVEL_FLAGS = { 1: { four: 20, twelve: 50 }, 2: { four: 30, twelve: 75 }, 3: { four: 40, twelve: 100 } };
+// Pogo's clocks, as published at the HD launch: 2:30 / 2:15 / 2:00.
+const LEVEL_SECONDS = { 1: 150, 2: 135, 3: 120 };
+const timeForLevel = lvl => LEVEL_SECONDS[lvl] || 150;
+// Pogo says harder levels pay more but never publishes the formula; this is
+// our stand-in: 20 / 30 / 40 points a letter.
+const POINTS_PER_LETTER = { 1: 20, 2: 30, 3: 40 };
+const pointsFor = (len, lvl) => len * (POINTS_PER_LETTER[lvl] || 20);
+// FREQ_ORDER is injected by the build: real-world English frequency, commonest first.
+const FREQ_RANK = new Map(FREQ_ORDER.split(" ").filter(Boolean).map((w, i) => [w, i]));
+// Racks are only built from six-letter words a person plausibly knows, so the
+// golden word is never a Scrabble-only anagram.
+const SIX_LETTER_FAMILIAR = SIX_LETTER.filter(w => freqRank(w) < 1e9);
+let level = Math.min(3, Math.max(1, parseInt(localStorage.getItem("ss_level") || "1", 10) || 1));
+let flags = LEVEL_FLAGS[level];
+
+const ROUND_SECONDS = 150; // 2:30
+const MIN_WORDS = 24, MAX_WORDS = 80; // 24 keeps Skill 3's 22-word board always fillable
+
+let roundNum = 0;
+let gameTotal = 0;         // finished rounds
+let rackLetters = [];
+let answerKey = [];
+let laidPool = [];
+let goldCandidate = "";
+let laidOut = [], laidSet = new Set();
+let bonusKey = [], bonusSet = new Set();
+let keySet = new Set();
+let goldWord = "";
+let tiles = [];
+let staged = [];
+let found = new Set(), bonusFound = new Set();
+let wordScore = 0, goldBonus = 0, pileBonus = 0, bonusScore = 0;
+let timeLeft = ROUND_SECONDS, timerId = null, started = false, ended = false;
+let milestones = { four: false, twelve: false };
+let roundTimeBonus = 0;
+// The swear jar: 25c a rude word, and it never empties. A joke, not a penalty —
+// the word still scores its full points.
+const JAR_RATE = 0.25;
+let jarCash = Math.round((parseFloat(localStorage.getItem("ss_jar") || "0") || 0) * 100) / 100;
+let jarRound = 0;
+
+const $ = id => document.getElementById(id);
+const els = {
+  time: $("time"), score: $("score"), foundCount: $("foundCount"),
+  gameTotal: $("gameTotal"), staging: $("staging"), msg: $("msg"), tiles: $("tiles"),
+  grid: $("grid"), board: $("board"), pileRow: $("pileRow"), revealBar: $("revealBar"),
+  titleOverlay: $("titleOverlay"), endOverlay: $("endOverlay")
+};
+
+// JASON'S HOOK: lewd bonus system goes here — sounds, animations, etc.
+// This function fires every time a swear word is submitted and scored.
+// Default behavior: a small SWEARY BONUS! flash appended to the message.
+// Jason will replace the body below with his own sounds and lewd bonus
+// system later — the hook and the call site stay the same.
+function onSwearWord(word){
+  jarRound++;
+  jarCash = Math.round((jarCash + JAR_RATE) * 100) / 100;
+  try { localStorage.setItem("ss_jar", String(jarCash)); } catch (e) {}
+  renderJar();
+  const chip = $("jarStat");
+  chip.classList.remove("flash");
+  void chip.offsetWidth;
+  chip.classList.add("flash");
+  // two coins into the jar
+  tone(1046, 0.07, "triangle", 0.10, 1318);
+  setTimeout(()=>tone(1568, 0.10, "triangle", 0.08), 70);
+  say("😈 SWEARY BONUS! Jar's at $" + jarCash.toFixed(2) + ".", "warn");
+  speak("rudejar");
+}
+
+function renderJar(){
+  const chip = $("jarStat");
+  $("jarVal").textContent = "$" + jarCash.toFixed(2);
+  chip.hidden = jarCash <= 0;
+}
+
+/* ---------------- sound ---------------- */
+let actx = null;
+let muted = (localStorage.getItem("ss_muted") === "1");
+function audio(){
+  if (muted) return null;
+  if (!actx) {
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+  }
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+function tone(freq, dur, type, vol, slideTo){
+  const c = audio(); if (!c) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type || "sine";
+  o.frequency.setValueAtTime(freq, c.currentTime);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime + dur);
+  g.gain.setValueAtTime(0.0001, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(vol || 0.12, c.currentTime + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(); o.stop(c.currentTime + dur + 0.02);
+}
+function noise(dur, vol, cutoff){
+  const c = audio(); if (!c) return;
+  const n = Math.floor(c.sampleRate * dur);
+  const buf = c.createBuffer(1, n, c.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const src = c.createBufferSource(); src.buffer = buf;
+  const f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = cutoff || 900;
+  const g = c.createGain(); g.gain.value = vol || 0.2;
+  src.connect(f); f.connect(g); g.connect(c.destination);
+  src.start();
+}
+const sfx = {
+  pop(){ tone(520, .07, "triangle", .10, 780); },
+  splat(){ noise(.16, .22, 700); tone(120, .10, "sine", .10, 70); },
+  buzz(){ tone(150, .16, "square", .07, 110); },
+  chime(){ tone(880, .12, "sine", .10); setTimeout(()=>tone(1320,.16,"sine",.09), 90); },
+  pile(){ tone(300, .12, "triangle", .10, 520); },
+  end(){ [523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.22,"triangle",.10), i*130)); }
+};
+$("btnSound").addEventListener("click", ()=>{
+  muted = !muted;
+  localStorage.setItem("ss_muted", muted ? "1" : "0");
+  $("btnSound").textContent = muted ? "🔇" : "🔊";
+  if (muted) stopVoice(); else sfx.pop();
+});
+$("btnSound").textContent = muted ? "🔇" : "🔊";
+
+function say(text, kind){
+  els.msg.textContent = text;
+  els.msg.className = kind || "";
+  els.msg.classList.add("show");
+  clearTimeout(say.t);
+  say.t = setTimeout(()=>{ els.msg.classList.remove("show"); }, 2400);
+}
+
+/* ---------------- Crappy's voice ---------------- */
+// Jason's own recordings, baked in as data URIs by pack/build_v2.py. One line
+// at a time: a new clip cuts the old one, and anything that fires while a line
+// is still talking waits instead of piling up.
+const VOICE = __VOICE__;
+let voiceNow = null, voiceBusyUntil = 0;
+
+function stopVoice(){
+  if (voiceNow){
+    try { voiceNow.pause(); voiceNow.currentTime = 0; } catch (e) {}
+    voiceNow = null;
+  }
+  voiceBusyUntil = 0;
+}
+
+function speak(name, opts){
+  if (muted) return;
+  const src = VOICE[name];
+  if (!src) return;
+  if (!(opts && opts.force) && performance.now() < voiceBusyUntil) return;
+  stopVoice();
+  const a = new Audio(src);
+  a.volume = (opts && opts.volume) || 0.95;
+  voiceNow = a;
+  voiceBusyUntil = performance.now() + 2600;
+  a.addEventListener("loadedmetadata", ()=>{
+    if (voiceNow === a) voiceBusyUntil = performance.now() + a.duration * 1000 + 240;
+  });
+  a.addEventListener("ended", ()=>{ if (voiceNow === a) voiceNow = null; });
+  const p = a.play();
+  if (p && p.catch) p.catch(()=>{ if (voiceNow === a) voiceNow = null; });
+}
+window.ssSpeak = speak;   // for testing any line by name from the console
+
+/* ---------------- dictionary helpers ---------------- */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function formableWords(letters){
+  const out = new Set();
+  const n = letters.length;
+  for (let mask = 0; mask < (1 << n); mask++) {
+    let bits = 0; for (let i = 0; i < n; i++) if (mask & (1 << i)) bits++;
+    if (bits < 3 || bits > 6) continue;
+    const sub = [];
+    for (let i = 0; i < n; i++) if (mask & (1 << i)) sub.push(letters[i].toLowerCase());
+    const k = sub.sort().join("");
+    const hit = BY_KEY.get(k);
+    if (hit) for (const w of hit) out.add(w);
+  }
+  return [...out].sort((a,b)=> a.length - b.length || (a < b ? -1 : 1));
+}
+
+function splitKey(key){
+  const laid = [], bonus = [];
+  // Board-eligible = in the curated common list, or a word common enough to
+  // show up in real English usage (SINE, EON, NOES used to fall through here).
+  for (const w of key) (COMMON_SET.has(w) || freqRank(w) < 1e9 ? laid : bonus).push(w);
+  return { laid, bonus };
+}
+
+function generateRack(){
+  const seeds = SIX_LETTER_FAMILIAR.length ? SIX_LETTER_FAMILIAR : SIX_LETTER;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const seed = seeds[Math.floor(Math.random() * seeds.length)];
+    const letters = shuffle(seed.toUpperCase().split(""));
+    const key = formableWords(letters);
+    const { laid } = splitKey(key);
+    // MIN_WORDS counts only words a person plausibly knows, so the board can
+    // always be filled with real words at every skill level.
+    const familiar = laid.filter(w => freqRank(w) < 1e9);
+    if (familiar.length >= MIN_WORDS && laid.length <= MAX_WORDS) return { letters, key, laid };
+  }
+  const fb = formableWords(["E","S","N","S","O","I"]);
+  return { letters: ["E","S","N","S","O","I"], key: fb, laid: splitKey(fb).laid };
+}
+
+/* ---------------- round setup ---------------- */
+function setupRound(){
+  roundNum++;
+  if (roundNum > 1) setTimeout(()=>speak("again"), 600);
+  let gen;
+  if (roundNum === 1) {
+    const key = formableWords(["E","S","N","S","O","I"]);
+    gen = { letters: ["E","S","N","S","O","I"], key, laid: splitKey(key).laid };
+  } else {
+    gen = generateRack();
+  }
+  rackLetters = gen.letters;
+  answerKey = gen.key;
+  laidPool = gen.laid;
+  // Pogo's golden word is always the six-letter word, so it always gets a strip
+  // on the board even if it isn't a common word.
+  // The golden word is the six-letter word people are most likely to know
+  // (NOISES over the Scrabble-only ENOSIS).
+  goldCandidate = answerKey.filter(w => w.length === 6).sort(rankCmp)[0]
+    || answerKey.reduce((b,w)=> w.length > b.length ? w : b, answerKey[0]);
+  laidOut = boardWordsForLevel(laidPool, level, goldCandidate);
+  laidSet = new Set(laidOut);
+  flags = LEVEL_FLAGS[level];
+  bonusKey = answerKey.filter(w => !laidSet.has(w));
+  bonusSet = new Set(bonusKey);
+  keySet = new Set(answerKey);
+  goldWord = laidOut.reduce((best, w) => (w.length > best.length ? w : best), laidOut[0]);
+
+  tiles = shuffle(rackLetters.map((l,i)=>({letter:l, orig:i})));
+  staged = []; found = new Set(); bonusFound = new Set();
+  wordScore = 0; goldBonus = 0; pileBonus = 0; bonusScore = 0;
+  jarRound = 0;
+  roundTimeBonus = 0;
+  timeLeft = timeForLevel(level); started = false; ended = false;
+  milestones = { four: false, last: false };
+  clearInterval(timerId); timerId = null;
+
+  buildTiles();
+  buildPiles();
+  ["btnEnter","btnMix","btnClear"].forEach(id=>{ $(id).disabled = false; });
+  els.board.classList.remove("reveal");
+  els.revealBar.classList.remove("show");
+  els.time.classList.remove("low");
+  els.gameTotal.textContent = "game " + gameTotal.toLocaleString();
+  renderAll();
+  els.msg.classList.remove("show");
+  els.msg.textContent = "";
+  $("bonusBox").hidden = true;
+  $("goldCard").hidden = true;
+  $("goldTxt").textContent = "";
+}
+
+function buildTiles(){
+  els.tiles.innerHTML = "";
+  tiles.forEach((t, i)=>{
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tile";
+    b.dataset.state = "plain";
+    b.setAttribute("aria-label", "Letter " + t.letter);
+    b.innerHTML =
+      '<span class="critter">' +
+        '<img class="plain" alt="" src="' + ART.plain + '">' +
+        '<img class="excited" alt="" src="' + ART.excited + '">' +
+        '<img class="sleepy" alt="" src="' + ART.sleepy + '">' +
+      '</span><span class="plaque">' + t.letter + '</span>';
+    b.addEventListener("click", ()=>stageTile(i));
+    els.tiles.appendChild(b);
+    t.el = b;
+  });
+}
+
+// One pile per word on the board: the 4th pays the first bonus, the last pays
+// the last-word bonus, same as Pogo's carrot row.
+function buildPiles(){
+  els.pileRow.innerHTML = "";
+  const n = laidOut.length;
+  for (let i = 0; i < n; i++){
+    const p = document.createElement("div");
+    p.className = "pile";
+    p.innerHTML = '<div class="dirt"></div>' +
+      '<img alt="" src="__ART_PILE__">' +
+      '<span class="splat">💥</span>' +
+      '<div class="tag">' + (i === 3 ? "+" + flags.four : i === n - 1 ? "+" + flags.twelve : "") + '</div>';
+    els.pileRow.appendChild(p);
+  }
+}
+
+// Pogo picks a level-sized slice of the rack's laid-out words, commonest first,
+// and always keeps the longest word on the board so the golden word is findable.
+function freqRank(w){
+  if (FREQ_RANK.has(w)) return FREQ_RANK.get(w);
+  // an unknown plural of a known word still counts as familiar
+  if (w.length > 3 && w.endsWith("s") && FREQ_RANK.has(w.slice(0,-1))) return 40000 + FREQ_RANK.get(w.slice(0,-1));
+  return 1e9;
+}
+// Google's 20k common-words order is a better "what would a person think of"
+// ranking than the subtitle corpus (which ranks letter names like ESS above
+// real words). Subtitles are the fallback for anything it doesn't list.
+const GOOGLE_RANK = new Map((typeof GOOGLE_ORDER === "string" ? GOOGLE_ORDER.split(" ") : []).filter(Boolean).map((w,i)=>[w,i]));
+const googleRank = w => GOOGLE_RANK.has(w) ? GOOGLE_RANK.get(w) : Infinity;
+// Zipf score per word (0-15), built from wordfreq: 13 = "the", 8 = everyday
+// word, 6 = literate, 4 = rare. This is the ranking that decides what the board
+// asks for, because it measures how likely a player is to think of the word.
+const LEVEL_OF = new Map();
+if (typeof WORD_LEVELS === "string" && WORD_LEVELS.length === DICT.length){
+  DICT.forEach((w,i)=> LEVEL_OF.set(w, WORD_LEVELS.charCodeAt(i) - 33));
+}
+const levelOf = w => LEVEL_OF.has(w) ? LEVEL_OF.get(w) : 0;
+// Words the corpus loves and nobody types. They stay valid and scoreable, they
+// just never get asked for. Manual override, as every word game ends up doing.
+const BOARD_SKIP = new Set("ness sen ons nos ess sos sei seis sone sones sines ose oes ens ats ers als cis moc".split(" "));
+function rankCmp(a,b){
+  const la = levelOf(a), lb = levelOf(b);
+  if (la !== lb) return lb - la;              // the word more people know, first
+  const ga = googleRank(a), gb = googleRank(b);
+  if (ga !== gb) return ga - gb;
+  const ra = freqRank(a), rb = freqRank(b);
+  if (ra !== rb) return ra - rb;
+  return b.length - a.length || (a < b ? -1 : 1); // unknown words: longer first
+}
+
+function boardWordsForLevel(pool, lvl, must){
+  const cand = (must && !pool.includes(must)) ? pool.concat([must]) : pool.slice();
+  if (!cand.length) return [];
+  // Only words somebody might actually know are ever *required*. Anything the
+  // frequency list has never heard of (ESS, ARS, ATS, HISN...) stays available
+  // as a bonus word but never blocks a win. A rack with fewer familiar words
+  // asks for fewer words rather than asking for nonsense.
+  const familiar = cand.filter(w => freqRank(w) < 1e9);
+  const source = familiar.length >= 6 ? familiar : cand;
+  const n = Math.min(LEVEL_WORDS[lvl] || 12, source.length);
+  // Ordered by how likely a player is to think of the word, so the obvious
+  // ones (ION, NOISE, SIN) get the slots and the leftovers are the obscure
+  // ones that were always going to be secret stinkers. Plurals are held back
+  // so the board asks for SIN and NOISE, not SIN, SINS, NOISE and NOISES.
+  const usable = source.filter(w => !BOARD_SKIP.has(w));
+  const ranked = (usable.length >= n ? usable : source).slice().sort(rankCmp);
+  const chosen = [], held = new Set();
+  for (const w of ranked){
+    if (chosen.length >= n) break;
+    if (held.has(w)) continue;
+    chosen.push(w);
+    if (w.length > 3 && w.endsWith("s")) held.add(w.slice(0, -1));
+    held.add(w + "s");
+  }
+  if (chosen.length < n) for (const w of ranked){ if (chosen.length >= n) break; if (!chosen.includes(w)) chosen.push(w); }
+  if (must && !chosen.includes(must)) chosen[chosen.length - 1] = must;
+  return chosen.sort((a,b)=> a.length - b.length || (a < b ? -1 : 1));
+}
+
+function renderAll(){ renderTiles(); renderStaging(); renderGrid(); renderBonus(); renderPiles(); renderHud(); }
+
+function renderTiles(){
+  tiles.forEach((t, i)=>{
+    const st = staged.includes(i) ? "picked" : (t.asleep ? "sleepy" : "plain");
+    t.el.dataset.state = st;
+    t.el.disabled = ended;
+    // Shake moves the tile objects around; the plaques have to be repainted or
+    // the button keeps showing the letter that used to live there.
+    const plaque = t.el.querySelector(".plaque");
+    if (plaque && plaque.textContent !== t.letter){
+      plaque.textContent = t.letter;
+      t.el.setAttribute("aria-label", "Letter " + t.letter);
+    }
+  });
+}
+
+function renderHud(){
+  els.time.textContent = fmtTime(timeLeft);
+  els.foundCount.textContent = found.size + " / " + laidOut.length;
+  $("level").textContent = level;
+  $("lvlDown").disabled = level <= 1;
+  $("lvlUp").disabled = level >= 3;
+  $("boardCount").textContent = found.size + " / " + laidOut.length;
+  els.time.classList.toggle("low", started && timeLeft <= 30 && !ended);
+  const target = wordScore + goldBonus + pileBonus + bonusScore;
+  animateScore(target);
+  els.gameTotal.textContent = "game " + (gameTotal + target).toLocaleString();
+  renderJar();
+}
+
+let shownScore = 0, scoreRaf = null;
+function animateScore(target){
+  if (shownScore === target){ els.score.textContent = target.toLocaleString(); return; }
+  if (scoreRaf) cancelAnimationFrame(scoreRaf);
+  const step = ()=>{
+    const diff = target - shownScore;
+    if (Math.abs(diff) <= 1){ shownScore = target; }
+    else { shownScore += diff > 0 ? Math.max(1, Math.ceil(diff / 6)) : diff; }
+    els.score.textContent = shownScore.toLocaleString();
+    if (shownScore !== target) scoreRaf = requestAnimationFrame(step);
+  };
+  step();
+}
+
+function fmtTime(s){ return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+
+function renderStaging(){
+  els.staging.innerHTML = "";
+  if (staged.length === 0){
+    els.staging.innerHTML = '<span class="hint">Tap the stinkers to spell a word &mdash; 3 letters or more.</span>';
+    return;
+  }
+  staged.forEach((ti, si)=>{
+    const s = document.createElement("button");
+    s.type = "button";
+    s.className = "slot" + (si === staged.length - 1 ? " new" : "");
+    s.textContent = tiles[ti].letter;
+    s.title = "Put it back";
+    s.addEventListener("click", ()=>unstage(si));
+    els.staging.appendChild(s);
+  });
+}
+
+// Pogo's board: strips sorted by length, four to a column, flowing right.
+function renderGrid(){
+  const sorted = laidOut.slice().sort((a,b)=> a.length - b.length || (a < b ? -1 : 1));
+  const wrap = document.createElement("div");
+  wrap.className = "cols4";
+  sorted.forEach(w=>{
+    const isFound = found.has(w);
+    const b = document.createElement("span");
+    b.className = "wbox" + (isFound ? " found" : "") +
+      (isFound && w === goldWord ? " gold" : "") +
+      (ended && !isFound ? " missed" : "");
+    b.textContent = w.toUpperCase();
+    wrap.appendChild(b);
+  });
+  els.grid.innerHTML = "";
+  els.grid.appendChild(wrap);
+  $("boardCount").textContent = found.size + " / " + laidOut.length;
+}
+
+function renderBonus(){
+  const box = $("bonusBox");
+  if (bonusFound.size === 0){ box.hidden = true; return; }
+  box.hidden = false;
+  $("bonusCount").textContent = bonusFound.size + " found · +" + bonusScore;
+  const list = $("bonusList");
+  list.innerHTML = "";
+  [...bonusFound].sort((a,b)=> a.length - b.length || (a < b ? -1 : 1)).forEach(w=>{
+    const s = document.createElement("span");
+    s.className = "bword";
+    s.innerHTML = w.toUpperCase() + " <b>+" + pointsFor(w.length, level) + "</b>";
+    list.appendChild(s);
+  });
+}
+
+function renderPiles(){
+  [...els.pileRow.children].forEach((p, i)=>{
+    p.classList.toggle("stomped", i < found.size);
+  });
+}
+
+/* ---------------- play ---------------- */
+function stageTile(i){
+  if (ended) return;
+  lastWordAt = Date.now();
+  if (!started){ started = true; startTimer(); }
+  if (staged.includes(i)) return;
+  staged.push(i);
+  sfx.pop();
+  renderTiles(); renderStaging();
+}
+
+function unstage(si){
+  if (ended) return;
+  staged.splice(si,1);
+  renderTiles(); renderStaging();
+}
+
+function clearStaged(){
+  if (ended) return;
+  if (staged.length) sfx.pop();
+  staged = [];
+  renderTiles(); renderStaging();
+}
+
+// Pogo's Backspace / CLEAR LETTER puts the last letter back on the rack.
+function undoLetter(){
+  if (ended || !staged.length) return;
+  staged.pop();
+  sfx.pop();
+  renderTiles(); renderStaging();
+}
+
+function mixUp(){
+  if (ended) return;
+  const stagedLetters = staged.map(ti=>tiles[ti].letter);
+  tiles = shuffle(tiles);
+  staged = [];
+  stagedLetters.forEach(L=>{
+    const idx = tiles.findIndex((t,i)=>t.letter===L && !staged.includes(i));
+    if (idx >= 0) staged.push(idx);
+  });
+  renderTiles(); renderStaging();
+  sfx.pop();
+  say("Shaken, not stirred.", "warn");
+}
+
+function squash(i){
+  const el = tiles[i] && tiles[i].el;
+  if (!el) return;
+  el.classList.remove("squash");
+  void el.offsetWidth;
+  el.classList.add("squash");
+  setTimeout(()=>el.classList.remove("squash"), 380);
+}
+
+function submitWord(){
+  if (ended) return;
+  const word = staged.map(ti=>tiles[ti].letter).join("").toLowerCase();
+  const wordU = word.toUpperCase();
+  if (word.length < 3){ bad("Three letters or more!"); return; }
+  if (found.has(word) || bonusFound.has(word)){ bad("Already stomped " + wordU + "."); return; }
+  if (!keySet.has(word)){
+    bad(laidOut.length ? "Not a word here." : "Not a word here.");
+    return;
+  }
+  const pts = pointsFor(word.length, level);
+  if (laidSet.has(word)){
+    const used = staged.slice();
+    found.add(word);
+    wordScore += pts;
+    let extra = "";
+    if (word === goldWord){
+      goldBonus = 100; extra = " ★ GOLDEN WORD! +100"; flyGold(); sfx.chime();
+      speak("golden", { force: true });
+      $("goldTxt").textContent = wordU; $("goldCard").hidden = false;
+    }
+    if (found.size === 4 && !milestones.four){ pileBonus += flags.four; milestones.four = true; extra += " 💩 +" + flags.four + " pile"; }
+    if (found.size === laidOut.length && !milestones.last){ pileBonus += flags.twelve; milestones.last = true; extra += " 💩 +" + flags.twelve + " last word"; }
+    if (extra.includes("pile")) speak("pilebonus");
+    staged = [];
+    used.forEach(squash);
+    sfx.splat();
+    say(wordU + " — +" + pts + extra, "good");
+    if (!extra.includes("GOLDEN")){
+      if (word.length >= 6) speak("bigword");
+      else if (found.size === 8) speak("onaroll");
+    }
+    if (SWEAR_SET.has(word)) onSwearWord(word);
+    renderAll();
+    if (found.size === laidOut.length) endRound(true);
+  } else {
+    const used = staged.slice();
+    bonusFound.add(word);
+    bonusScore += pts;
+    staged = [];
+    used.forEach(squash);
+    sfx.splat();
+    say("🎁 SECRET STINKER! " + wordU + " — +" + pts, "good");
+    speak("sneaky");
+    if (SWEAR_SET.has(word)) onSwearWord(word);
+    renderAll();
+  }
+}
+
+function bad(text){
+  say(text, "");
+  if (Math.random() < 0.65) speak("notaword");
+  els.staging.classList.remove("shake");
+  void els.staging.offsetWidth;
+  els.staging.classList.add("shake");
+  sfx.buzz();
+}
+
+function flyGold(){
+  const img = document.createElement("img");
+  img.src = ART.crown;
+  img.className = "flygold";
+  img.alt = "";
+  document.body.appendChild(img);
+  setTimeout(()=>img.remove(), 1350);
+  els.score.classList.remove("pop");
+  void els.score.offsetWidth;
+  els.score.classList.add("pop");
+}
+
+/* ---------------- timer ---------------- */
+let lastWordAt = Date.now(), idleSaid = false;
+function startTimer(){
+  lastWordAt = Date.now();
+  timerId = setInterval(()=>{
+    timeLeft--;
+    renderHud();
+    if (timeLeft === 30) speak("hurry");
+    if (!idleSaid && found.size < 3 && Date.now() - lastWordAt > 21000){
+      idleSaid = true;
+      speak("anybody");
+    }
+    if (timeLeft <= 0){ endRound(false); }
+  }, 1000);
+}
+
+/* ---------------- end ---------------- */
+function endRound(allFound, reason){
+  if (ended) return;
+  ended = true;
+  clearInterval(timerId); timerId = null;
+  staged = [];                 // any half-built word goes back on the rack
+  roundTimeBonus = allFound ? timeLeft * 2 : 0;
+  tiles.forEach(t=>{ t.asleep = true; });
+  renderAll();
+  if (allFound){
+    sfx.chime();
+    speak("wedidit", { force: true });
+    say("ALL STOMPED! +" + roundTimeBonus + " for the clock.", "good");
+    setTimeout(()=>showSummary(true), 900);
+  } else {
+    els.board.classList.add("reveal");
+    els.revealBar.querySelector(".txt").innerHTML = reason === "level"
+      ? "Skill level changed &mdash; round over. <small>Grey words are the ones you walked past.</small>"
+      : "Time&rsquo;s up! <small>Grey words are the ones that got away.</small>";
+    els.revealBar.classList.add("show");
+    ["btnEnter","btnMix","btnClear"].forEach(id=>{ $(id).disabled = true; });
+    sfx.end();
+    speak(reason === "level" ? "nicestomp" : "almosthadit", { force: true });
+  }
+}
+
+function showSummary(allFound){
+  const roundTotal = wordScore + bonusScore + goldBonus + pileBonus + roundTimeBonus;
+  gameTotal += roundTotal;
+  $("endEmoji").textContent = allFound ? "🏆💩" : (found.size >= 12 ? "💩" : "🥴");
+  $("endTitle").textContent = allFound ? "All stomped!" : (found.size >= 12 ? "Nicely stomped" : "Time's up");
+  $("endLine").textContent = allFound
+    ? "You found all " + laidOut.length + " words with " + fmtTime(timeLeft) + " to spare" +
+      (bonusFound.size ? ", plus " + bonusFound.size + " secret stinker" + (bonusFound.size === 1 ? "" : "s") : "") + "."
+    : "You found " + found.size + " out of " + laidOut.length + " words this round. The " +
+      (laidOut.length - found.size) + " grey one" + ((laidOut.length - found.size) === 1 ? "" : "s") +
+      " got away" + (bonusFound.size ? ", but you nabbed " + bonusFound.size + " secret stinker" + (bonusFound.size === 1 ? "" : "s") : "") + ".";
+  $("rWord").textContent = wordScore;
+  $("rBonus").textContent = bonusScore;
+  $("rGold").textContent = goldBonus;
+  $("rPile").textContent = pileBonus;
+  $("rTime").textContent = roundTimeBonus;
+  $("rTotal").textContent = roundTotal;
+  $("rJar").textContent = jarRound
+    ? jarRound + (jarRound === 1 ? " word · $" : " words · $") + (jarRound * JAR_RATE).toFixed(2)
+    : "$0.00";
+  $("rGame").textContent = gameTotal.toLocaleString();
+  let best = 0;
+  try { best = Number(localStorage.getItem("ss_best") || 0); } catch (e) {}
+  if (roundTotal > 0 && gameTotal > best){
+    try { localStorage.setItem("ss_best", String(gameTotal)); } catch (e) {}
+    if (best > 0) setTimeout(()=>speak("laurabest", { force: true }), 1200);
+  }
+  els.revealBar.classList.remove("show");
+  els.endOverlay.classList.remove("hidden");
+  els.gameTotal.textContent = "game " + gameTotal.toLocaleString();
+}
+
+/* ---------------- wire up ---------------- */
+$("btnEnter").addEventListener("click", submitWord);
+$("btnMix").addEventListener("click", mixUp);
+$("btnClear").addEventListener("click", clearStaged);
+$("btnContinue").addEventListener("click", ()=>showSummary(false));
+$("btnNew").addEventListener("click", ()=>{
+  els.endOverlay.classList.add("hidden");
+  setupRound();
+});
+$("mascot").src = ART.crown;
+
+/* ---------------- skill levels ---------------- */
+let pendingLevel = null;
+
+// Re-cut the same rack's board for a different level. Only used before a round
+// has started, so there is no score or found word to throw away.
+function recutRound(lvl){
+  laidOut = boardWordsForLevel(laidPool, lvl, goldCandidate);
+  laidSet = new Set(laidOut);
+  bonusKey = answerKey.filter(w => !laidSet.has(w));
+  bonusSet = new Set(bonusKey);
+  goldWord = laidOut.reduce((b,w)=> w.length > b.length ? w : b, laidOut[0]);
+  found = new Set(); bonusFound = new Set();
+  wordScore = 0; goldBonus = 0; pileBonus = 0; bonusScore = 0;
+  jarRound = 0;
+  milestones = { four: false, last: false };
+  if (!started && !ended) timeLeft = timeForLevel(lvl);
+  $("goldCard").hidden = true;
+  $("goldTxt").textContent = "";
+  buildPiles();
+  renderAll();
+  $("bonusBox").hidden = true;
+}
+
+function applyLevel(n){
+  level = Math.min(3, Math.max(1, n));
+  localStorage.setItem("ss_level", String(level));
+  flags = LEVEL_FLAGS[level];
+  $("level").textContent = level;
+  if (started && !ended){ endRound(false, "level"); return; } // new level from next round
+  recutRound(level);
+}
+
+function requestLevel(n){
+  if (n < 1 || n > 3 || n === level) return;
+  if (started && !ended){
+    pendingLevel = n;
+    $("confirmOverlay").classList.remove("hidden");
+  } else {
+    applyLevel(n);
+  }
+}
+
+$("lvlDown").addEventListener("click", ()=>requestLevel(level - 1));
+$("lvlUp").addEventListener("click", ()=>requestLevel(level + 1));
+$("btnNo").addEventListener("click", ()=>{
+  pendingLevel = null;
+  $("confirmOverlay").classList.add("hidden");
+});
+$("btnYes").addEventListener("click", ()=>{
+  $("confirmOverlay").classList.add("hidden");
+  const n = pendingLevel; pendingLevel = null;
+  if (n){ applyLevel(n); speak("shaky"); }
+});
+
+$("btnPlay").addEventListener("click", ()=>{
+  if ($("dontShow").checked) localStorage.setItem("ss_skip_howto", "1");
+  els.titleOverlay.classList.add("hidden");
+  speak("letsstomp");
+});
+
+document.addEventListener("keydown", e=>{
+  if (!els.titleOverlay.classList.contains("hidden")) return;
+  if (!els.endOverlay.classList.contains("hidden")) return;
+  if (e.key === "Enter"){ e.preventDefault(); submitWord(); }
+  else if (e.key === " "){ e.preventDefault(); mixUp(); }
+  else if (e.key === "Backspace"){ e.preventDefault(); undoLetter(); }
+  else if (/^[a-zA-Z]$/.test(e.key)){
+    const L = e.key.toUpperCase();
+    const idx = tiles.findIndex((t,i)=>t.letter===L && !staged.includes(i));
+    if (idx >= 0) stageTile(idx);
+  }
+});
+
+if (localStorage.getItem("ss_skip_howto") === "1") els.titleOverlay.classList.add("hidden");
+
+// Two impacts on the way in: SHIT lands, then STOMPERS. Any sound wanted for
+// these hangs off the ss-slam event (detail.n = 1 or 2), so the audio files can
+// drop in later without touching the timing.
+(function titleSlam(){
+  if (els.titleOverlay.classList.contains("hidden")) return;
+  const brand = els.titleOverlay.querySelector(".brand");
+  const hit = (n)=>{
+    document.dispatchEvent(new CustomEvent("ss-slam", { detail: { n } }));
+    if (!brand) return;
+    brand.classList.remove("boom");
+    void brand.offsetWidth;
+    brand.classList.add("boom");
+  };
+  setTimeout(()=>hit(1), 400);   // SHIT lands
+  setTimeout(()=>hit(2), 900);   // STOMPERS lands
+  setTimeout(()=>speak("letsstomp"), 1500);
+})();
+shownScore = 0;
+setupRound();
+</script>
+</body>
+</html>

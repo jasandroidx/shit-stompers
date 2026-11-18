@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.DS_Store
+voice-kokoro/
+*.wav
+*.zip
+node_modules/
+.freebuff/
