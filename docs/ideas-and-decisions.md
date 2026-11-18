@@ -2,6 +2,13 @@
 
 Running list so nothing decided in conversation gets lost. Newest at the top.
 
+## Audit, 2026-11-18
+
+Full read, play-throughs and board sampling: `docs/analysis-2026-11-18.md`.
+Six bugs fixed there (idle nudge, clock while hidden, oversized boards, swear
+message, thin-rack pile labels, title past the fold), plus the genre research
+that backs the board sizes and clocks, and a ranked list of what to build next.
+
 ## Saved for later
 
 **A porch that changes as you progress.** The background should not be one fixed

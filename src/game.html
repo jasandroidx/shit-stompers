@@ -150,6 +150,13 @@
     transform:translateY(-2px);box-shadow:0 7px 0 #5b3417, 0 0 22px rgba(246,196,83,.45), inset 0 1px 0 #fff8e2;
     border-color:#c98a2e;
   }
+  /* Shake: the plaques hop as their letters swap places */
+  #tiles.reshuffling .plaque{animation:plaqueShuffle .32s ease-out both}
+  @keyframes plaqueShuffle{
+    0%{transform:translateY(-7px) scale(.88);opacity:.45}
+    55%{transform:translateY(2px) scale(1.05);opacity:1}
+    100%{transform:translateY(0) scale(1)}
+  }
 
   /* ---------------- buttons ---------------- */
   #buttons{display:flex;gap:8px;justify-content:center;align-items:stretch;flex-wrap:wrap}
@@ -532,14 +539,25 @@
   }
 
   /* ---- short screens ---- */
+  /* 360x640 (a small phone, or a phone with its address bar showing) is the
+     tightest common case: the whole card has to fit with START on screen, or the
+     first thing a new player sees is a cut-off button. One block, not two:
+     a second shorter-height block would be overridden by this one. */
   @media (max-height:720px){
-    .hero-wrap{width:min(240px,44vw)}
-    .logo .l1{font-size:clamp(44px,12vmin,84px)}
-    .logo .l2{font-size:clamp(34px,9.6vmin,70px)}
-    h1.logo{margin-top:-30px}
-    .brand .tag{margin-top:5px;font-size:10px}
-    #titleOverlay .col p{font-size:12px}
-    #titleOverlay .fine{font-size:11px}
+    .hero-wrap{width:min(78px,21vw);margin:0 auto -8px}
+    .logo .l1{font-size:clamp(34px,9.2vmin,70px)}
+    .logo .l2{font-size:clamp(26px,7.2vmin,58px)}
+    h1.logo{margin-top:-10px}
+    .title-shadow{display:none}   /* no room to waste on a shadow this short */
+    .brand .tag{margin-top:2px;font-size:9px}
+    #titleOverlay{padding:6px 9px 10px}
+    #titleOverlay .panel{padding:6px 10px 7px}
+    #titleOverlay .cols{gap:3px;margin-bottom:5px}
+    #titleOverlay .col{padding:5px 7px}
+    #titleOverlay .col p{font-size:10.5px;line-height:1.28}
+    #titleOverlay .fine{font-size:9.5px;line-height:1.28;margin-bottom:3px}
+    #titleOverlay .dontshow{margin-bottom:3px;font-size:10.5px}
+    #titleOverlay #btnPlay{padding:9px 18px;font-size:15.5px}
   }
   @media (max-width:640px){
     .hero-wrap{width:min(180px,48vw)}
@@ -592,7 +610,7 @@
 
   /* ---------------- responsive ---------------- */
   @media (max-width:640px){
-    body{padding:10px 8px 30px}
+    body{padding:8px 8px 20px}
     #hud{flex-wrap:nowrap;gap:1px;padding:6px 6px}
     .stat{flex:1 1 0}
     .stat + .stat{border-left:0}
@@ -617,7 +635,7 @@
     .panel{padding:18px 14px 16px}
     #grid .cols4{grid-template-rows:repeat(4,26px);gap:4px 4px}
     .wbox{height:26px;font-size:12.5px;min-width:30px;padding:0 5px}
-    .lvrow button{width:15px;height:15px;font-size:7px}
+    .lvrow button{width:22px;height:22px;font-size:9px}
     .lvrow b{font-size:17px;min-width:12px}
   }
   @media (max-width:400px){
@@ -633,6 +651,19 @@
   @media (prefers-reduced-motion:reduce){
     *{animation-duration:.001ms !important;transition-duration:.001ms !important}
   }
+
+  /* ---- phones that are also short ---- */
+  /* Must come after both the width and the height queries: the 640px block sets
+     its own hero width, and a short-screen rule that lands before it loses. This
+     is what keeps START on the first screen of a 360x640 phone. */
+  @media (max-width:640px) and (max-height:720px){
+    .hero-wrap{width:min(118px,31vw);margin:0 auto -8px}
+    h1.logo{margin-top:-6px}
+    .logo .l1{font-size:clamp(32px,9vmin,62px)}
+    .logo .l2{font-size:clamp(24px,6.8vmin,50px)}
+    .brand .tag{font-size:8.5px;margin-top:0}
+    .title-shadow{display:none}
+  }
 </style>
 </head>
 <body>
@@ -643,7 +674,7 @@
     <div class="stat"><span class="label">Time</span><span class="value" id="time">2:30</span></div>
     <div class="stat"><span class="label">Stomped</span><span class="value" id="foundCount">0 / 12</span></div>
     <div class="stat"><span class="label">Score</span><span class="value" id="score">0</span><span class="sub" id="gameTotal">game 0</span></div>
-    <div class="stat jar" id="jarStat" hidden title="Swear jar"><span class="label">Swear</span><span class="value" id="jarVal">$0.00</span></div>
+    <div class="stat jar" id="jarStat" title="Swear jar"><span class="label">Swear</span><span class="value" id="jarVal">$0.00</span></div>
     <button id="btnSound" type="button" aria-label="Toggle sound">&#128266;</button>
   </header>
 
@@ -720,7 +751,7 @@
         <p>20 points a letter at skill 1, 30 at 2, 40 at 3. The golden word pays 100 extra. The 4th word and the last word each pay a pile bonus. Rude words drop 25&cent; in the swear jar &mdash; it costs you nothing.</p>
       </div>
     </div>
-    <p class="fine">Skill level sets the clock and the board: 2:30 with 12 words, 2:15 with 16, or 2:00 with 22. Your own dictionary &mdash; no weird Scrabble words on the list, and no word filter either. Round 1 is always the same starter rack.</p>
+    <p class="fine">Skill level sets the clock and the board: 2:30 with 16 words, 2:30 with 20, or 2:45 with 24. Your own dictionary &mdash; no weird Scrabble words on the list, and no word filter either. Round 1 is always the same starter rack.</p>
     <label class="dontshow"><input type="checkbox" id="dontShow"> Don&rsquo;t show this again</label>
     <button class="btn stomp" id="btnPlay" type="button">Start stomping &rsaquo;</button>
   </div>
@@ -799,13 +830,18 @@ const ART = {
 const TAME_WORDS = new Set("assed balling bimbo bimbos bint bints bollix bummer cack crud cruds dork dorks dorky git gits idiot idiots lesbo moron morons muff muffs pansy prat prats retard retards screw screws suck sucked sucker twit twits".split(" "));
 const SWEAR_SET = new Set(CRUDE_WORDS.filter(w => w.length <= 6 && !TAME_WORDS.has(w)));
 
-// Pogo's board size per skill level, and its bonus flags. Levels 1-2 were
-// observed on the real game (12 words / 20+50 flags, 16 words / 30+75);
-// level 3 was never reached, so 22 words and 40/100 are extrapolated.
-const LEVEL_WORDS = { 1: 12, 2: 16, 3: 22 };
+// Board size per skill level. Pogo publishes 12 / 16 / 22, but a rack here
+// offers a median of 27 findable words (80% of racks can fill 16, 71% can fill
+// 20), so asking for only 12 left obvious words such as DOE or POISE sitting in
+// the "secret stinker" bucket. These are bigger; a thin rack asks for fewer.
+const LEVEL_WORDS = { 1: 16, 2: 20, 3: 24 };
 const LEVEL_FLAGS = { 1: { four: 20, twelve: 50 }, 2: { four: 30, twelve: 75 }, 3: { four: 40, twelve: 100 } };
-// Pogo's clocks, as published at the HD launch: 2:30 / 2:15 / 2:00.
-const LEVEL_SECONDS = { 1: 150, 2: 135, 3: 120 };
+// Clocks, checked against how the genre actually paces itself. TextTwist offers
+// ~20 targets in 2:00 (6s a word) and Word Whomp 2:00-2:30 on six letters;
+// casual design guidance puts a round at about two minutes. Level 1 is 16 words
+// in 2:30 (9.4s a word), level 2 20 in 2:30 (7.5s), level 3 24 in 2:45 (6.9s) —
+// the last one needs the extra 30s, 24 words in 2:15 was 5.6s a word.
+const LEVEL_SECONDS = { 1: 150, 2: 150, 3: 165 };
 const timeForLevel = lvl => LEVEL_SECONDS[lvl] || 150;
 // Pogo says harder levels pay more but never publishes the formula; this is
 // our stand-in: 20 / 30 / 40 points a letter.
@@ -870,14 +906,16 @@ function onSwearWord(word){
   // two coins into the jar
   tone(1046, 0.07, "triangle", 0.10, 1318);
   setTimeout(()=>tone(1568, 0.10, "triangle", 0.08), 70);
-  say("😈 SWEARY BONUS! Jar's at $" + jarCash.toFixed(2) + ".", "warn");
+  const scored = els.msg.classList.contains("show") ? els.msg.textContent.trim() : "";
+  say((scored ? scored + "  " : "") + "😈 SWEARY BONUS! Jar's at $" + jarCash.toFixed(2) + ".",
+      scored ? "good" : "warn");
   speak("rudejar");
 }
 
 function renderJar(){
   const chip = $("jarStat");
   $("jarVal").textContent = "$" + jarCash.toFixed(2);
-  chip.hidden = jarCash <= 0;
+  chip.hidden = false;   // always on show: $0.00 is a standing invitation
 }
 
 /* ---------------- sound ---------------- */
@@ -889,6 +927,7 @@ function audio(){
     try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
   }
   if (actx.state === "suspended") actx.resume();
+  warmSfx();
   return actx;
 }
 function tone(freq, dur, type, vol, slideTo){
@@ -915,19 +954,161 @@ function noise(dur, vol, cutoff){
   src.connect(f); f.connect(g); g.connect(c.destination);
   src.start();
 }
+// Jason's recorded effects. Decoded into WebAudio buffers once, so a tile click
+// fires with no per-play latency; the synth underneath is the fallback for the
+// moment before a buffer is ready, or if a file is missing.
+const SFX = __SFX__;
+const sfxBuf = {};
+let sfxWarm = false;
+function b64buf(uri){
+  const bin = atob(uri.slice(uri.indexOf(",") + 1));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+function loadSfx(name){
+  if (sfxBuf[name] !== undefined || !SFX[name]) return;
+  const c = audio(); if (!c) return;
+  sfxBuf[name] = null;                 // pending
+  c.decodeAudioData(b64buf(SFX[name]),
+    d => { sfxBuf[name] = d; },
+    () => { sfxBuf[name] = false; });
+}
+function warmSfx(){
+  if (sfxWarm) return;
+  sfxWarm = true;
+  Object.keys(SFX).forEach(loadSfx);
+}
+function playSfx(name, vol){
+  const c = audio(); if (!c) return false;
+  const b = sfxBuf[name];
+  if (!b) return false;                // still decoding: the synth covers it
+  const s = c.createBufferSource(), g = c.createGain();
+  s.buffer = b;
+  g.gain.value = vol == null ? 0.6 : vol;
+  s.connect(g); g.connect(c.destination);
+  s.start();
+  return true;
+}
+window.ssSfx = sfxBuf;   // diagnostics: window.ssSfx.tap.buffer means the file decoded
 const sfx = {
-  pop(){ tone(520, .07, "triangle", .10, 780); },
-  splat(){ noise(.16, .22, 700); tone(120, .10, "sine", .10, 70); },
-  buzz(){ tone(150, .16, "square", .07, 110); },
+  tap(){ if (!playSfx("tap", .45)) tone(520, .07, "triangle", .10, 780); },
+  right(){ if (!playSfx("right", .70)){ noise(.16, .22, 700); tone(120, .10, "sine", .10, 70); } },
+  wrong(){ if (!playSfx("wrong", .55)) tone(150, .16, "square", .07, 110); },
+  shuffle(){ if (!playSfx("shuffle", .45)) tone(300, .12, "triangle", .10, 520); },
+  powerup(){ if (!playSfx("powerup", .50)){ tone(880, .12, "sine", .10); setTimeout(()=>tone(1320,.16,"sine",.09), 90); } },
+  allletters(){ if (!playSfx("allletters", .60)) tone(880, .12, "sine", .10); },
+  idle(){ playSfx("idle", .50); },
+  pop(){ tone(520, .07, "triangle", .10, 780); },                                   // undo / wipe
+  slam(){ noise(.16, .22, 700); tone(120, .10, "sine", .10, 70); },                 // title impacts
   chime(){ tone(880, .12, "sine", .10); setTimeout(()=>tone(1320,.16,"sine",.09), 90); },
   pile(){ tone(300, .12, "triangle", .10, 520); },
   end(){ [523,659,784].forEach((f,i)=>setTimeout(()=>tone(f,.22,"triangle",.10), i*130)); }
 };
+/* ---------------- music ---------------- */
+// A little porch tune, synthesized on the same AudioContext as the effects, so
+// it costs nothing in file size. Lookahead scheduler (never stutters), ducks
+// under Crappy's voice, and stops with the mute toggle. Swap in a real track by
+// dropping audio/music.mp3 in and playing it here instead.
+const BPM = 104, MUSIC_STEP = 60 / BPM / 2;   // one step = an eighth note
+// C major bounce: [bass midi, melody midi or 0 to rest]
+const TUNE = [
+  [48, 72], [48, 76], [55, 79], [55, 76],
+  [53, 77], [53, 81], [48, 79], [48, 76],
+  [50, 74], [50, 77], [57, 81], [57, 79],
+  [55, 74], [55, 72], [48, 74], [48, 72]
+];
+const MUSIC_URIS = __MUSIC__;
+let flyinAudio = null;
+// The title's own score, cut out of crappy-superhero-flyin.mp4 — the music the
+// strip was animated to. Browsers only allow sound after a gesture, so a
+// first-ever visit may keep this quiet; the porch tune below starts on START or
+// the first tile, so there is always music once the player touches anything.
+function playFlyinScore(){
+  if (muted || !MUSIC_URIS.flyin) return;
+  if (!flyinAudio){ flyinAudio = new Audio(MUSIC_URIS.flyin); flyinAudio.volume = 0.5; }
+  try { flyinAudio.currentTime = 0; } catch(e) {}
+  const p = flyinAudio.play();
+  if (p && p.catch) p.catch(()=>{});
+}
+function stopFlyinScore(){
+  const a = flyinAudio;
+  if (!a || a.paused) return;
+  let v = a.volume;
+  const fade = setInterval(()=>{
+    v -= 0.05;
+    if (v <= 0.02){ clearInterval(fade); a.pause(); a.currentTime = 0; a.volume = 0.5; }
+    else a.volume = v;
+  }, 60);
+}
+const MUSIC = { on: false, timer: null, next: 0, step: 0, gain: null, level: 0.13 };
+const midiHz = n => 440 * Math.pow(2, (n - 69) / 12);
+function musicBus(){
+  const c = audio(); if (!c) return null;
+  if (!MUSIC.gain){
+    const g = c.createGain();
+    g.gain.value = MUSIC.level;
+    g.connect(c.destination);
+    MUSIC.gain = g;
+  }
+  return MUSIC.gain;
+}
+function pluck(freq, when, dur, vol, type){
+  const c = audio(), out = musicBus();
+  if (!c || !out) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type || "triangle";
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(vol, when + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g); g.connect(out);
+  o.start(when); o.stop(when + dur + 0.05);
+}
+function musicTick(){
+  const c = audio(); if (!c || !MUSIC.on) return;
+  while (MUSIC.next < c.currentTime + 0.3){
+    const [bass, mel] = TUNE[MUSIC.step % TUNE.length];
+    pluck(midiHz(bass), MUSIC.next, MUSIC_STEP * 1.8, 0.34, "triangle");
+    if (mel) pluck(midiHz(mel), MUSIC.next, MUSIC_STEP * 1.1, 0.15, "square");
+    MUSIC.step++;
+    MUSIC.next += MUSIC_STEP;
+  }
+}
+function startMusic(){
+  if (MUSIC.on) return;
+  const c = audio(); if (!c) return;
+  musicBus();
+  MUSIC.on = true;
+  MUSIC.next = c.currentTime + 0.08;
+  clearInterval(MUSIC.timer);
+  MUSIC.timer = setInterval(musicTick, 120);
+  musicTick();
+}
+function stopMusic(){
+  MUSIC.on = false;
+  clearInterval(MUSIC.timer);
+  MUSIC.timer = null;
+}
+// Crappy talks over the top of it, so the tune steps aside while he speaks.
+function duckMusic(ms){
+  const c = audio(), g = MUSIC.gain;
+  if (!c || !g) return;
+  g.gain.setTargetAtTime(MUSIC.level * 0.3, c.currentTime, 0.06);
+  if (flyinAudio && !flyinAudio.paused) flyinAudio.volume = 0.16;
+  clearTimeout(duckMusic.t);
+  duckMusic.t = setTimeout(()=>{
+    if (MUSIC.gain) MUSIC.gain.gain.setTargetAtTime(MUSIC.level, c.currentTime, 0.25);
+    if (flyinAudio && !flyinAudio.paused) flyinAudio.volume = 0.5;
+  }, ms || 1200);
+}
+window.ssMusic = MUSIC;   // diagnostics: ssMusic.on, .step
+
 $("btnSound").addEventListener("click", ()=>{
   muted = !muted;
   localStorage.setItem("ss_muted", muted ? "1" : "0");
   $("btnSound").textContent = muted ? "🔇" : "🔊";
-  if (muted) stopVoice(); else sfx.pop();
+  if (muted){ stopVoice(); stopMusic(); } else { sfx.pop(); startMusic(); }
 });
 $("btnSound").textContent = muted ? "🔇" : "🔊";
 
@@ -966,6 +1147,7 @@ function speak(name, opts){
   voiceBusyUntil = performance.now() + 2600;
   a.addEventListener("loadedmetadata", ()=>{
     if (voiceNow === a) voiceBusyUntil = performance.now() + a.duration * 1000 + 240;
+    duckMusic((a.duration || 2) * 1000 + 350);
   });
   a.addEventListener("ended", ()=>{ if (voiceNow === a) voiceNow = null; });
   if (opts && opts.onEnd) a.addEventListener("ended", ()=>opts.onEnd(a), { once: true });
@@ -1051,6 +1233,7 @@ function setupRound(){
   roundTimeBonus = 0;
   timeLeft = timeForLevel(level); started = false; ended = false;
   milestones = { four: false, last: false };
+  idleSaid = false;            // one "anybody there?" per round, not per session
   clearInterval(timerId); timerId = null;
 
   buildTiles();
@@ -1070,7 +1253,7 @@ function setupRound(){
 
 function buildTiles(){
   els.tiles.innerHTML = "";
-  tiles.forEach((t, i)=>{
+  tiles.forEach(t=>{
     const b = document.createElement("button");
     b.type = "button";
     b.className = "tile";
@@ -1082,7 +1265,9 @@ function buildTiles(){
         '<img class="excited" alt="" src="' + ART.excited + '">' +
         '<img class="sleepy" alt="" src="' + ART.sleepy + '">' +
       '</span><span class="plaque">' + t.letter + '</span>';
-    b.addEventListener("click", ()=>stageTile(i));
+    // identity, not position: Shake reorders the rack, and a stale index would
+    // stage a letter from somewhere else on the board
+    b.addEventListener("click", ()=>stageTile(tiles.indexOf(t)));
     els.tiles.appendChild(b);
     t.el = b;
   });
@@ -1099,7 +1284,11 @@ function buildPiles(){
     p.innerHTML = '<div class="dirt"></div>' +
       '<img alt="" src="__ART_PILE__">' +
       '<span class="splat">💥</span>' +
-      '<div class="tag">' + (i === 3 ? "+" + flags.four : i === n - 1 ? "+" + flags.twelve : "") + '</div>';
+      '<div class="tag">' +
+        (i === 3 && i === n - 1 ? "+" + (flags.four + flags.twelve)
+         : i === 3 ? "+" + flags.four
+         : i === n - 1 ? "+" + flags.twelve : "") +
+      '</div>';
     els.pileRow.appendChild(p);
   }
 }
@@ -1121,16 +1310,23 @@ const googleRank = w => GOOGLE_RANK.has(w) ? GOOGLE_RANK.get(w) : Infinity;
 // word, 6 = literate, 4 = rare. This is the ranking that decides what the board
 // asks for, because it measures how likely a player is to think of the word.
 const LEVEL_OF = new Map();
-if (typeof WORD_LEVELS === "string" && WORD_LEVELS.length === DICT.length){
-  DICT.forEach((w,i)=> LEVEL_OF.set(w, WORD_LEVELS.charCodeAt(i) - 33));
+// DICT grows by the crude words added above, so WORD_LEVELS only ever covers the
+// prefix that came from data/. Comparing the full lengths never matched, which
+// silently disabled this ranking in every build and left the board ordered by
+// Google rank alone — the reason DOPE and DOE never got a slot.
+if (typeof WORD_LEVELS === "string" && WORD_LEVELS.length && WORD_LEVELS.length <= DICT.length){
+  for (let i = 0; i < WORD_LEVELS.length; i++) LEVEL_OF.set(DICT[i], WORD_LEVELS.charCodeAt(i) - 33);
 }
 const levelOf = w => LEVEL_OF.has(w) ? LEVEL_OF.get(w) : 0;
 // Words the corpus loves and nobody types. They stay valid and scoreable, they
 // just never get asked for. Manual override, as every word game ends up doing.
-const BOARD_SKIP = new Set("ness sen ons nos ess sos sei seis sone sones sines ose oes ens ats ers als cis moc".split(" "));
+const BOARD_SKIP = new Set("ness sen ons nos ess sos sei seis sone sones sines ose oes ens ats ers als cis moc eds ins bel del lea bae pos psi dis ops".split(" "));
 function rankCmp(a,b){
-  const la = levelOf(a), lb = levelOf(b);
-  if (la !== lb) return lb - la;              // the word more people know, first
+  // Knowability, minus a length penalty: a short word a player knows beats a
+  // longer one. Raw corpus frequency used to fill boards with POSED and OPS
+  // while never asking for DOPE, which is backwards for a casual player.
+  const sa = 2 * levelOf(a) - a.length, sb = 2 * levelOf(b) - b.length;
+  if (sa !== sb) return sb - sa;
   const ga = googleRank(a), gb = googleRank(b);
   if (ga !== gb) return ga - gb;
   const ra = freqRank(a), rb = freqRank(b);
@@ -1153,17 +1349,47 @@ function boardWordsForLevel(pool, lvl, must){
   // ones that were always going to be secret stinkers. Plurals are held back
   // so the board asks for SIN and NOISE, not SIN, SINS, NOISE and NOISES.
   const usable = source.filter(w => !BOARD_SKIP.has(w));
-  const ranked = (usable.length >= n ? usable : source).slice().sort(rankCmp);
-  const chosen = [], held = new Set();
+  // Never pad the board back up with the words BOARD_SKIP exists to keep out.
+  // A rack with fewer good words asks for fewer words, as documented.
+  const list = usable.length >= 3 ? usable : source;
+  const target = Math.min(n, list.length);
+  const ranked = list.slice().sort(rankCmp);
+  // A word brings its plural (or its singular) along. Players list SIN and SINS
+  // together, NOSE and NOSES together; asking for one and hiding the other as a
+  // "secret stinker" reads as a missing word.
+  const poolSet = new Set(source);
+  const chosen = [];
+  const add = w=>{
+    if (w && chosen.length < target && !chosen.includes(w) && poolSet.has(w)) chosen.push(w);
+  };
   for (const w of ranked){
-    if (chosen.length >= n) break;
-    if (held.has(w)) continue;
-    chosen.push(w);
-    if (w.length > 3 && w.endsWith("s")) held.add(w.slice(0, -1));
-    held.add(w + "s");
+    if (chosen.length >= target) break;
+    add(w);
+    add(w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w + "s");
   }
-  if (chosen.length < n) for (const w of ranked){ if (chosen.length >= n) break; if (!chosen.includes(w)) chosen.push(w); }
-  if (must && !chosen.includes(must)) chosen[chosen.length - 1] = must;
+  for (const w of ranked){ if (chosen.length >= target) break; add(w); }
+  if (must && !chosen.includes(must)){
+    // The golden word brings its stem along: POISED -> POISE, BLAZED -> BLAZE.
+    // It also has to fit: appending it used to overshoot the board size (skill 3
+    // promised 24 words and dealt 25). Make room by dropping the least obvious
+    // words already chosen, never the stem it is bringing.
+    const stem = must.endsWith("ed") ? must.slice(0, -2)
+               : (must.endsWith("d") || must.endsWith("s")) ? must.slice(0, -1) : "";
+    const wantStem = !!stem && list.includes(stem) && !chosen.includes(stem);
+    const need = wantStem ? 2 : 1;
+    const rankIndex = new Map(ranked.map((w, i) => [w, i]));
+    while (chosen.length + need > target && chosen.length > 0){
+      let worst = chosen[0];
+      for (const w of chosen){
+        if (w === stem) continue;
+        if ((rankIndex.get(w) ?? 1e9) > (rankIndex.get(worst) ?? 1e9)) worst = w;
+      }
+      if (worst === stem) break;
+      chosen.splice(chosen.indexOf(worst), 1);
+    }
+    if (wantStem) chosen.push(stem);
+    chosen.push(must);
+  }
   return chosen.sort((a,b)=> a.length - b.length || (a < b ? -1 : 1));
 }
 
@@ -1171,6 +1397,8 @@ function renderAll(){ renderTiles(); renderStaging(); renderGrid(); renderBonus(
 
 function renderTiles(){
   tiles.forEach((t, i)=>{
+    // keep the DOM order identical to the rack, so a Shake visibly moves letters
+    if (els.tiles.children[i] !== t.el) els.tiles.insertBefore(t.el, els.tiles.children[i] || null);
     const st = staged.includes(i) ? "picked" : (t.asleep ? "sleepy" : "plain");
     t.el.dataset.state = st;
     t.el.disabled = ended;
@@ -1274,11 +1502,12 @@ function renderPiles(){
 /* ---------------- play ---------------- */
 function stageTile(i){
   if (ended) return;
+  startMusic();               // still paused if the how-to was skipped
   lastWordAt = Date.now();
   if (!started){ started = true; startTimer(); }
   if (staged.includes(i)) return;
   staged.push(i);
-  sfx.pop();
+  sfx.tap();
   renderTiles(); renderStaging();
 }
 
@@ -1306,14 +1535,25 @@ function undoLetter(){
 function mixUp(){
   if (ended) return;
   const stagedLetters = staged.map(ti=>tiles[ti].letter);
-  tiles = shuffle(tiles);
+  // Mix Up, as in Word Whomp: the letters actually swap places on screen.
+  // Retry until the arrangement differs, or the shake looks like it failed.
+  const before = tiles.map(t=>t.letter).join("");
+  for (let tries = 0; tries < 8; tries++){
+    tiles = shuffle(tiles);
+    if (tiles.map(t=>t.letter).join("") !== before) break;
+  }
   staged = [];
   stagedLetters.forEach(L=>{
     const idx = tiles.findIndex((t,i)=>t.letter===L && !staged.includes(i));
     if (idx >= 0) staged.push(idx);
   });
   renderTiles(); renderStaging();
-  sfx.pop();
+  els.tiles.classList.remove("reshuffling");
+  void els.tiles.offsetWidth;
+  els.tiles.classList.add("reshuffling");
+  clearTimeout(mixUp.t);
+  mixUp.t = setTimeout(()=>els.tiles.classList.remove("reshuffling"), 340);
+  sfx.shuffle();
   say("Shaken, not stirred.", "warn");
 }
 
@@ -1333,7 +1573,7 @@ function submitWord(){
   if (word.length < 3){ bad("Three letters or more!"); return; }
   if (found.has(word) || bonusFound.has(word)){ bad("Already stomped " + wordU + "."); return; }
   if (!keySet.has(word)){
-    bad(laidOut.length ? "Not a word here." : "Not a word here.");
+    bad("Not a word here.");
     return;
   }
   const pts = pointsFor(word.length, level);
@@ -1343,7 +1583,7 @@ function submitWord(){
     wordScore += pts;
     let extra = "";
     if (word === goldWord){
-      goldBonus = 100; extra = " ★ GOLDEN WORD! +100"; flyGold(); sfx.chime();
+      goldBonus = 100; extra = " ★ GOLDEN WORD! +100"; flyGold(); sfx.powerup();
       speak("golden", { force: true });
       $("goldTxt").textContent = wordU; $("goldCard").hidden = false;
     }
@@ -1352,10 +1592,10 @@ function submitWord(){
     if (extra.includes("pile")) speak("pilebonus");
     staged = [];
     used.forEach(squash);
-    sfx.splat();
+    sfx.right();
     say(wordU + " — +" + pts + extra, "good");
     if (!extra.includes("GOLDEN")){
-      if (word.length >= 6) speak("bigword");
+      if (word.length >= 6){ sfx.allletters(); speak("bigword"); }
       else if (found.size === 8) speak("onaroll");
     }
     if (SWEAR_SET.has(word)) onSwearWord(word);
@@ -1367,7 +1607,7 @@ function submitWord(){
     bonusScore += pts;
     staged = [];
     used.forEach(squash);
-    sfx.splat();
+    sfx.right();
     say("🎁 SECRET STINKER! " + wordU + " — +" + pts, "good");
     speak("sneaky");
     if (SWEAR_SET.has(word)) onSwearWord(word);
@@ -1381,7 +1621,7 @@ function bad(text){
   els.staging.classList.remove("shake");
   void els.staging.offsetWidth;
   els.staging.classList.add("shake");
-  sfx.buzz();
+  sfx.wrong();
 }
 
 function flyGold(){
@@ -1401,11 +1641,16 @@ let lastWordAt = Date.now(), idleSaid = false;
 function startTimer(){
   lastWordAt = Date.now();
   timerId = setInterval(()=>{
+    // Hidden tab or a locked phone: hold the clock. Losing a round to a phone
+    // call is not a difficulty setting, and the idle nudge gets its timer reset
+    // so it does not fire the instant the player comes back.
+    if (document.hidden){ lastWordAt = Date.now(); return; }
     timeLeft--;
     renderHud();
     if (timeLeft === 30) speak("hurry");
     if (!idleSaid && found.size < 3 && Date.now() - lastWordAt > 21000){
       idleSaid = true;
+      sfx.idle();
       speak("anybody");
     }
     if (timeLeft <= 0){ endRound(false); }
@@ -1538,6 +1783,8 @@ $("btnYes").addEventListener("click", ()=>{
 $("btnPlay").addEventListener("click", ()=>{
   if ($("dontShow").checked) localStorage.setItem("ss_skip_howto", "1");
   els.titleOverlay.classList.add("hidden");
+  stopFlyinScore();
+  startMusic();
   speak("letsstomp");
 });
 
@@ -1571,6 +1818,7 @@ function announce(name){
   const a = new Audio(src);
   a.volume = 0.95;
   announcerNow = a;
+  duckMusic((a.duration || 2) * 1000 + 350);
   const p = a.play();
   if (p && p.catch) p.catch(()=>{ if (announcerNow === a) announcerNow = null; });
   return a;
@@ -1628,6 +1876,7 @@ document.addEventListener("ss-slam", e=>{
     setTimeout(revealCard, 2800);   // muted, or a clip that never ends
   };
   const flyIn = ()=>{
+    playFlyinScore();
     if (sheet) sheet.classList.add("fly");
     setTimeout(heroLanded, 2600);   // reduced motion, or no animationend
     if (strip) strip.addEventListener("animationend", heroLanded, { once: true });
@@ -1635,11 +1884,11 @@ document.addEventListener("ss-slam", e=>{
 
   setTimeout(()=>{
     hit(1);
-    sfx.splat();
+    sfx.slam();
     const first = announce("announcer-shit");
     after(first, 1300, ()=>{
       hit(2);
-      sfx.splat();
+      sfx.slam();
       const second = announce("announcer-stompers");
       after(second, 2700, flyIn);
     });

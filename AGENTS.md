@@ -45,6 +45,7 @@ node -e 'const fs=require("fs");const h=fs.readFileSync("index.html","utf8");new
 | `__ART_PLAIN__`, `__ART_EXCITED__`, `__ART_SLEEPY__`, `__ART_CROWN__`, `__ART_PILE__`, `__ART_BG__` | base64 data URIs from `assets/` |
 | `__ART_HERO__` | the title's superhero fly-in: `assets/sprites/crappy-superhero-strip.webp`, a 40-frame transparent WebP strip (16fps) |
 | `__VOICE__` | a JSON object of `"name": "data:audio/mpeg;base64,…"` from `audio/` |
+| `__SFX__` | the same, for short recorded effects in `audio/sfx/` (mono 96k mp3) |
 | `/*__FONT_CSS__*/` | `@font-face` blocks from `fonts/*.woff2` — Luckiest Guy (wordmark) and Fredoka (menu UI), base64'd |
 
 If a placeholder is left unsubstituted the build asserts and fails. That is
@@ -77,6 +78,12 @@ JS is in labelled blocks too:
 
 ## Board generation (the bit that's easy to break)
 
+Board sizes are 16 / 20 / 24 with clocks of 2:30 / 2:30 / 2:45. Pogo publishes
+12 / 16 / 22, but a rack here offers a median of 27 good words, so a 12-word
+board hid obvious answers as "secret stinkers". A picked word drags its plural
+(or singular) onto the board, the golden word drags its stem (POISED -> POISE),
+and a thin rack asks for fewer words rather than for nonsense.
+
 The rack is a six-letter word, shuffled. Every formable 3–6 letter word is found,
 then split into board words and "secret stinkers":
 
@@ -89,9 +96,43 @@ then split into board words and "secret stinkers":
 4. `data/word-levels.txt` (obviousness 0–15, one character per `DICT` entry)
    orders the board so the easy words land first.
 
-`WORD_LEVELS` must be exactly the same length and order as `DICT` or the map is
-silently ignored. If you edit the dictionary, regenerate it:
+`WORD_LEVELS` is one character per entry of `data/dictionary.txt` — it covers
+that **prefix** of `DICT`, because the crude words are appended at runtime. The
+build compares lengths naively, so the runtime check is `ra <= DICT.length` and
+maps the first `WORD_LEVELS.length` entries; an equality check silently disabled
+the whole ranking once and every board fell back to Google rank. If you edit the
+dictionary, regenerate it:
 `PYTHONPATH=/tmp/wf python3 build/score_words.py` (needs `wordfreq`).
+
+## Sound effects (recorded)
+
+Jason's short effects live in `audio/sfx/` as mono 96k mp3 and are packed into
+`__SFX__`, decoded into WebAudio buffers on the first sound (`warmSfx`), and
+played with no per-play latency. The synth in the `sound` block is the fallback
+for the moment before a buffer is ready, or if a file is missing.
+
+| file | fires on |
+|---|---|
+| `tap.mp3` | a letter tile is clicked |
+| `right.mp3` | a correct word is stomped |
+| `wrong.mp3` | a rejected word ("Not a word here.") |
+| `shuffle.mp3` | Shake / Space |
+| `allletters.mp3` | a six-letter word (uses the whole rack) |
+| `powerup.mp3` | the golden word |
+| `idle.mp3` | the "anybody there?" nudge |
+
+## Music
+
+There is no music file — the porch tune is synthesized (see `/* ---------------- music ---------------- */`).
+A 104 BPM C-major eighth-note loop of triangle bass plus square melody runs on the
+same AudioContext as the effects, scheduled with a 0.3s lookahead so it never stutters.
+It starts on the START button or the first tile click (both are gestures, so autoplay
+rules are satisfied), stops with the mute toggle, and drops to 30% while Crappy speaks
+(`duckMusic`, called from `speak` and the announcer). `window.ssMusic` exposes `.on`
+and `.step` for tests. To use a real track instead, drop `audio/music.mp3` in, inline it
+like the other files, and swap `startMusic` for a looping `<audio>`.
+
+`window.ssSfx` is the live buffer map — `ssSfx.tap.buffer` means it decoded.
 
 ## Voice
 
@@ -145,7 +186,20 @@ the card. There is no speech bubble any more — the clip is the line.
 - The word board restyles are keyed off `.wbox.found`, `.wbox.missed`,
   `.wbox.gold` and `.board.reveal`; renaming those breaks the reveal at the end
   of a round.
-- `lastWordAt` / `idleSaid` drive the idle nudge; `idleSaid` is per round.
+- `lastWordAt` / `idleSaid` drive the idle nudge. `idleSaid` is reset in
+  `setupRound` — it used to live for the whole page load, so the nudge fired once
+  and never again.
+- The countdown holds while `document.hidden` is true (locked phone, switched
+  tab) and resets `lastWordAt` on each held tick, so a player does not lose a
+  round to a phone call or get scolded the moment they come back.
+- `boardWordsForLevel` must never exceed `LEVEL_WORDS[lvl]`. The golden word and
+  its stem used to be appended after the cap and skill 3 dealt 25-word boards;
+  it now evicts the least obvious chosen words to make room.
+- Title media queries are order-sensitive: `@media (max-width:640px)` comes after
+  `@media (max-height:720px)`, so a short-screen rule that sets `.hero-wrap`,
+  `.logo` or `.tag` has to be repeated in the combined
+  `(max-width:640px) and (max-height:720px)` block at the very end of the sheet,
+  or the width query wins and the card runs past the fold on a 360x640 phone.
 - The timer is a plain `setInterval`; anything that pauses the game must clear
   `timerId` or the clock keeps running behind an overlay.
 

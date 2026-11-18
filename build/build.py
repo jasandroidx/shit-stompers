@@ -113,6 +113,35 @@ def voice_uris():
                 out[name] = "data:audio/mpeg;base64," + base64.b64encode(fh.read()).decode()
     return out
 
+def music_uris():
+    """The title score, cut out of crappy-superhero-flyin.mp4 and kept as mono
+    96k mp3 in audio/music/. The gameplay tune is synthesized, so this is the
+    only music file the game carries."""
+    d = os.path.join(ROOT, "audio", "music")
+    out = {}
+    if not os.path.isdir(d):
+        print("WARNING: audio/music/ missing, the title has no score")
+        return out
+    for f in sorted(os.listdir(d)):
+        if f.lower().endswith(".mp3"):
+            with open(os.path.join(d, f), "rb") as fh:
+                out[f[:-4]] = "data:audio/mpeg;base64," + base64.b64encode(fh.read()).decode()
+    return out
+
+def sfx_uris():
+    """Short recorded effects: tile click, right/wrong word, shake, six-letter
+    word, golden powerup, idle nudge. Mono 96k mp3 from audio/sfx/."""
+    d = os.path.join(ROOT, "audio", "sfx")
+    out = {}
+    if not os.path.isdir(d):
+        print("WARNING: audio/sfx/ missing, effects fall back to the synth")
+        return out
+    for f in sorted(os.listdir(d)):
+        if f.lower().endswith(".mp3"):
+            with open(os.path.join(d, f), "rb") as fh:
+                out[f[:-4]] = "data:audio/mpeg;base64," + base64.b64encode(fh.read()).decode()
+    return out
+
 def font_css():
     """Title/menu type from fonts/, base64'd so the game stays one file.
 
@@ -158,6 +187,12 @@ for k, v in art.items():
 voice = voice_uris()
 assert "__VOICE__" in out, "voice placeholder missing"
 out = out.replace("__VOICE__", json.dumps(voice))
+sfxmap = sfx_uris()
+assert "__SFX__" in out, "sfx placeholder missing"
+out = out.replace("__SFX__", json.dumps(sfxmap))
+musicmap = music_uris()
+assert "__MUSIC__" in out, "music placeholder missing"
+out = out.replace("__MUSIC__", json.dumps(musicmap))
 assert "__FONT_CSS__" in out, "font placeholder missing"
 out = out.replace("/*__FONT_CSS__*/", font_css())
 
@@ -170,3 +205,4 @@ print("wrote", OUT, round(len(out) / 1024), "KB")
 for k, v in art.items():
     print(k, round(len(v) / 1024), "KB")
 print("voice", len(voice), "clips,", round(sum(len(v) for v in voice.values()) / 1024), "KB")
+print("sfx", len(sfxmap), "effects,", round(sum(len(v) for v in sfxmap.values()) / 1024), "KB")
