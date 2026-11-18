@@ -54,6 +54,14 @@
   }
   .stat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0}
   .stat + .stat{border-left:1px solid rgba(246,196,83,.18)}
+  /* The Time chip doubles as the relaxed switch, so the setting is reachable
+     even after "don't show this again" hides the title card. */
+  .statbtn{
+    background:none;border:0;padding:0;font-family:inherit;color:inherit;
+    cursor:pointer;border-radius:8px;
+  }
+  .statbtn:hover .value{color:#fff}
+  .statbtn:focus-visible{outline:2px solid rgba(255,217,138,.8);outline-offset:2px}
   .label{font-size:10px;letter-spacing:2px;color:#c9a97c;font-weight:700;text-transform:uppercase;white-space:nowrap}
   .value{font-size:26px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;color:#fff4dc;text-shadow:0 2px 0 rgba(0,0,0,.4)}
   #time{color:#ffd98a}
@@ -321,6 +329,17 @@
   .panel .mascot{width:96px;margin:0 auto -4px;display:block;filter:drop-shadow(0 6px 6px rgba(0,0,0,.25))}
   .dontshow{display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:#8a6a3f;font-weight:700;margin-bottom:12px;cursor:pointer}
   .dontshow input{width:15px;height:15px;accent-color:#a3702f;cursor:pointer}
+  /* Relaxed mode: the one setting that changes how the game feels, so it gets
+     a real 20px box and a line of plain English instead of a footnote. */
+  .relaxline{
+    display:flex;align-items:center;gap:8px;text-align:left;
+    padding:6px 9px;margin:0 0 7px;border-radius:9px;
+    background:rgba(47,107,42,.09);border:1px dashed rgba(47,107,42,.4);
+    color:#2f5c2a;font-weight:700;cursor:pointer;
+  }
+  .relaxline input{width:20px;height:20px;flex:0 0 auto;accent-color:#2f6b2a;cursor:pointer}
+  .relaxline b{display:block;font-size:13px;letter-spacing:.3px;line-height:1.15}
+  .relaxline small{display:block;font-size:11px;font-weight:600;color:#5b3417;line-height:1.25}
   .panel .btn{justify-content:center;min-width:200px}
 
   /* ---------------- title screen ---------------- */
@@ -499,6 +518,7 @@
   #titleOverlay .col p{font-family:Fredoka,"Trebuchet MS",sans-serif;font-weight:500;font-size:12.5px;line-height:1.38}
   #titleOverlay .fine{font-family:Fredoka,"Trebuchet MS",sans-serif;font-weight:500;font-size:11.5px;line-height:1.45;margin:0 0 8px}
   #titleOverlay .dontshow{font-family:Fredoka,"Trebuchet MS",sans-serif;margin-bottom:8px}
+  #titleOverlay .relaxline{font-family:Fredoka,"Trebuchet MS",sans-serif;margin-bottom:7px}
   #titleOverlay #btnPlay{
     font-family:Fredoka,"Trebuchet MS",sans-serif;font-size:19px;letter-spacing:1.4px;
     padding:14px 34px;min-width:250px;justify-content:center;
@@ -557,6 +577,10 @@
     #titleOverlay .col p{font-size:10.5px;line-height:1.28}
     #titleOverlay .fine{font-size:9.5px;line-height:1.28;margin-bottom:3px}
     #titleOverlay .dontshow{margin-bottom:3px;font-size:10.5px}
+    #titleOverlay .relaxline{padding:4px 8px;margin-bottom:4px}
+    #titleOverlay .relaxline b{font-size:11.5px}
+    #titleOverlay .relaxline small{font-size:9.5px}
+    #titleOverlay .relaxline input{width:18px;height:18px}
     #titleOverlay #btnPlay{padding:9px 18px;font-size:15.5px}
   }
   @media (max-width:640px){
@@ -657,7 +681,10 @@
      its own hero width, and a short-screen rule that lands before it loses. This
      is what keeps START on the first screen of a 360x640 phone. */
   @media (max-width:640px) and (max-height:720px){
-    .hero-wrap{width:min(118px,31vw);margin:0 auto -8px}
+    .hero-wrap{width:min(88px,24vw);margin:0 auto -8px}
+    /* one line, not two: the relaxed switch has to fit above START on a 360x640 */
+    #titleOverlay .relaxline b{font-size:11px}
+    #titleOverlay .relaxline small{display:none}   /* the fine print already spells it out */
     h1.logo{margin-top:-6px}
     .logo .l1{font-size:clamp(32px,9vmin,62px)}
     .logo .l2{font-size:clamp(24px,6.8vmin,50px)}
@@ -671,7 +698,7 @@
 <div id="game">
   <header id="hud">
     <div class="stat"><span class="label">Skill</span><span class="lvrow"><button id="lvlDown" type="button" aria-label="Lower skill level">&#9664;</button><b id="level">1</b><button id="lvlUp" type="button" aria-label="Raise skill level">&#9654;</button></span></div>
-    <div class="stat"><span class="label">Time</span><span class="value" id="time">2:30</span></div>
+    <button class="stat statbtn" id="timeStat" type="button" aria-pressed="false" title="Tap to turn the clock off or on"><span class="label" id="timeLabel">Time</span><span class="value" id="time">2:30</span></button>
     <div class="stat"><span class="label">Stomped</span><span class="value" id="foundCount">0 / 12</span></div>
     <div class="stat"><span class="label">Score</span><span class="value" id="score">0</span><span class="sub" id="gameTotal">game 0</span></div>
     <div class="stat jar" id="jarStat" title="Swear jar"><span class="label">Swear</span><span class="value" id="jarVal">$0.00</span></div>
@@ -744,14 +771,16 @@
       </div>
       <div class="col">
         <h3>To win</h3>
-        <p>Stomp every word on the list before the clock runs out. Hidden bonus words are icing &mdash; they score, but you don&rsquo;t need them.</p>
+        <p>Stomp every word on the list. Beat the clock in timed mode, or take all the time you want in relaxed mode. Hidden bonus words are icing &mdash; they score, but you don&rsquo;t need them.</p>
       </div>
       <div class="col">
         <h3>To score</h3>
         <p>20 points a letter at skill 1, 30 at 2, 40 at 3. The golden word pays 100 extra. The 4th word and the last word each pay a pile bonus. Rude words drop 25&cent; in the swear jar &mdash; it costs you nothing.</p>
       </div>
     </div>
-    <p class="fine">Skill level sets the clock and the board: 2:30 with 16 words, 2:30 with 20, or 2:45 with 24. Your own dictionary &mdash; no weird Scrabble words on the list, and no word filter either. Round 1 is always the same starter rack.</p>
+    <p class="fine">Skill level sets the clock and the board: 2:30 with 16 words, 2:30 with 20, or 2:45 with 24. Relaxed mode turns the clock off entirely. Your own dictionary &mdash; no weird Scrabble words on the list, and no word filter either. Round 1 is always the same starter rack.</p>
+    <label class="relaxline"><input type="checkbox" id="relaxedBox">
+      <span><b>Relaxed mode</b><small>No clock &mdash; take all the time you want.</small></span></label>
     <label class="dontshow"><input type="checkbox" id="dontShow"> Don&rsquo;t show this again</label>
     <button class="btn stomp" id="btnPlay" type="button">Start stomping &rsaquo;</button>
   </div>
@@ -854,6 +883,10 @@ const FREQ_RANK = new Map(FREQ_ORDER.split(" ").filter(Boolean).map((w, i) => [w
 const SIX_LETTER_FAMILIAR = SIX_LETTER.filter(w => freqRank(w) < 1e9);
 let level = Math.min(3, Math.max(1, parseInt(localStorage.getItem("ss_level") || "1", 10) || 1));
 let flags = LEVEL_FLAGS[level];
+// Relaxed mode: no clock at all. Persisted, because the whole point is to set
+// it once and never think about a timer again.
+let relaxed = false;
+try { relaxed = localStorage.getItem("ss_relaxed") === "1"; } catch (e) {}
 
 const ROUND_SECONDS = 150; // 2:30
 const MIN_WORDS = 24, MAX_WORDS = 80; // 24 keeps Skill 3's 22-word board always fillable
@@ -872,7 +905,7 @@ let tiles = [];
 let staged = [];
 let found = new Set(), bonusFound = new Set();
 let wordScore = 0, goldBonus = 0, pileBonus = 0, bonusScore = 0;
-let timeLeft = ROUND_SECONDS, timerId = null, started = false, ended = false;
+let timeLeft = timeForLevel(level), timerId = null, started = false, ended = false;
 let milestones = { four: false, twelve: false };
 let roundTimeBonus = 0;
 // The swear jar: 25c a rude word, and it never empties. A joke, not a penalty —
@@ -1413,13 +1446,17 @@ function renderTiles(){
 }
 
 function renderHud(){
-  els.time.textContent = fmtTime(timeLeft);
+  els.time.textContent = relaxed ? "∞" : fmtTime(timeLeft);
+  $("timeLabel").textContent = relaxed ? "Relaxed" : "Time";
+  const timeChip = $("timeStat");
+  timeChip.setAttribute("aria-pressed", relaxed ? "true" : "false");
+  timeChip.title = relaxed ? "Relaxed mode — tap to turn the clock on" : "Timed round — tap to play relaxed";
   els.foundCount.textContent = found.size + " / " + laidOut.length;
   $("level").textContent = level;
   $("lvlDown").disabled = level <= 1;
   $("lvlUp").disabled = level >= 3;
   $("boardCount").textContent = found.size + " / " + laidOut.length;
-  els.time.classList.toggle("low", started && timeLeft <= 30 && !ended);
+  els.time.classList.toggle("low", !relaxed && started && timeLeft <= 30 && !ended);
   const target = wordScore + goldBonus + pileBonus + bonusScore;
   animateScore(target);
   els.gameTotal.textContent = "game " + (gameTotal + target).toLocaleString();
@@ -1636,10 +1673,28 @@ function flyGold(){
   els.score.classList.add("pop");
 }
 
+/* ---------------- relaxed mode ---------------- */
+// Toggling mid-round is safe: timeLeft keeps its last clock value, so turning
+// timed mode back on resumes where the clock stopped instead of resetting it.
+function setRelaxed(on, quiet){
+  relaxed = !!on;
+  try { localStorage.setItem("ss_relaxed", relaxed ? "1" : "0"); } catch (e) {}
+  $("relaxedBox").checked = relaxed;
+  if (relaxed){
+    clearInterval(timerId); timerId = null;
+  } else if (started && !ended && !timerId){
+    startTimer();
+  }
+  renderHud();
+  if (!quiet) say(relaxed ? "Relaxed mode — no clock. Take your time." : "Clock's on: " + fmtTime(timeLeft) + ".", "warn");
+}
+
 /* ---------------- timer ---------------- */
 let lastWordAt = Date.now(), idleSaid = false;
 function startTimer(){
+  if (relaxed) return;              // no clock to start
   lastWordAt = Date.now();
+  clearInterval(timerId);
   timerId = setInterval(()=>{
     // Hidden tab or a locked phone: hold the clock. Losing a round to a phone
     // call is not a difficulty setting, and the idle nudge gets its timer reset
@@ -1663,13 +1718,13 @@ function endRound(allFound, reason){
   ended = true;
   clearInterval(timerId); timerId = null;
   staged = [];                 // any half-built word goes back on the rack
-  roundTimeBonus = allFound ? timeLeft * 2 : 0;
+  roundTimeBonus = allFound && !relaxed ? timeLeft * 2 : 0;
   tiles.forEach(t=>{ t.asleep = true; });
   renderAll();
   if (allFound){
     sfx.chime();
     speak("wedidit", { force: true });
-    say("ALL STOMPED! +" + roundTimeBonus + " for the clock.", "good");
+    say(relaxed ? "ALL STOMPED! Every word found." : "ALL STOMPED! +" + roundTimeBonus + " for the clock.", "good");
     setTimeout(()=>showSummary(true), 900);
   } else {
     els.board.classList.add("reveal");
@@ -1687,9 +1742,9 @@ function showSummary(allFound){
   const roundTotal = wordScore + bonusScore + goldBonus + pileBonus + roundTimeBonus;
   gameTotal += roundTotal;
   $("endEmoji").textContent = allFound ? "🏆💩" : (found.size >= 12 ? "💩" : "🥴");
-  $("endTitle").textContent = allFound ? "All stomped!" : (found.size >= 12 ? "Nicely stomped" : "Time's up");
+  $("endTitle").textContent = allFound ? "All stomped!" : relaxed ? "Round over" : (found.size >= 12 ? "Nicely stomped" : "Time's up");
   $("endLine").textContent = allFound
-    ? "You found all " + laidOut.length + " words with " + fmtTime(timeLeft) + " to spare" +
+    ? "You found all " + laidOut.length + " words" + (relaxed ? "" : " with " + fmtTime(timeLeft) + " to spare") +
       (bonusFound.size ? ", plus " + bonusFound.size + " secret stinker" + (bonusFound.size === 1 ? "" : "s") : "") + "."
     : "You found " + found.size + " out of " + laidOut.length + " words this round. The " +
       (laidOut.length - found.size) + " grey one" + ((laidOut.length - found.size) === 1 ? "" : "s") +
@@ -1699,6 +1754,7 @@ function showSummary(allFound){
   $("rGold").textContent = goldBonus;
   $("rPile").textContent = pileBonus;
   $("rTime").textContent = roundTimeBonus;
+  $("rTime").closest("tr").hidden = relaxed;   // no clock, no clock bonus
   $("rTotal").textContent = roundTotal;
   $("rJar").textContent = jarRound
     ? jarRound + (jarRound === 1 ? " word · $" : " words · $") + (jarRound * JAR_RATE).toFixed(2)
@@ -1717,6 +1773,11 @@ function showSummary(allFound){
 
 /* ---------------- wire up ---------------- */
 $("btnEnter").addEventListener("click", submitWord);
+$("timeStat").addEventListener("click", ()=>{
+  if (ended) return;
+  sfx.tap();
+  setRelaxed(!relaxed);
+});
 $("btnMix").addEventListener("click", mixUp);
 $("btnClear").addEventListener("click", clearStaged);
 $("btnContinue").addEventListener("click", ()=>showSummary(false));
@@ -1800,6 +1861,9 @@ document.addEventListener("keydown", e=>{
     if (idx >= 0) stageTile(idx);
   }
 });
+
+$("relaxedBox").checked = relaxed;
+$("relaxedBox").addEventListener("change", ()=> setRelaxed($("relaxedBox").checked, true));
 
 if (localStorage.getItem("ss_skip_howto") === "1") els.titleOverlay.classList.add("hidden");
 

@@ -78,7 +78,8 @@ JS is in labelled blocks too:
 
 ## Board generation (the bit that's easy to break)
 
-Board sizes are 16 / 20 / 24 with clocks of 2:30 / 2:30 / 2:45. Pogo publishes
+Board sizes are 16 / 20 / 24 with clocks of 2:30 / 2:30 / 2:45 (relaxed
+mode drops the clock entirely — see below). Pogo publishes
 12 / 16 / 22, but a rack here offers a median of 27 good words, so a 12-word
 board hid obvious answers as "secret stinkers". A picked word drags its plural
 (or singular) onto the board, the golden word drags its stem (POISED -> POISE),
@@ -104,6 +105,15 @@ the whole ranking once and every board fell back to Google rank. If you edit the
 dictionary, regenerate it:
 `PYTHONPATH=/tmp/wf python3 build/score_words.py` (needs `wordfreq`).
 
+## Relaxed mode
+
+Persisted as `ss_relaxed`. The title card has a checkbox, and the Time chip in the
+HUD toggles it too — that second control is what keeps it reachable after "don't
+show this again" hides the title. Relaxed means no clock at all: `startTimer()`
+returns early, the HUD shows `∞`, `endRound()` pays no time bonus, and the summary
+hides the time row. `timeLeft` is untouched while relaxed, so switching back to
+timed mid-round starts the clock at the full level time.
+
 ## Sound effects (recorded)
 
 Jason's short effects live in `audio/sfx/` as mono 96k mp3 and are packed into
@@ -123,14 +133,15 @@ for the moment before a buffer is ready, or if a file is missing.
 
 ## Music
 
-There is no music file — the porch tune is synthesized (see `/* ---------------- music ---------------- */`).
-A 104 BPM C-major eighth-note loop of triangle bass plus square melody runs on the
-same AudioContext as the effects, scheduled with a 0.3s lookahead so it never stutters.
-It starts on the START button or the first tile click (both are gestures, so autoplay
-rules are satisfied), stops with the mute toggle, and drops to 30% while Crappy speaks
-(`duckMusic`, called from `speak` and the announcer). `window.ssMusic` exposes `.on`
-and `.step` for tests. To use a real track instead, drop `audio/music.mp3` in, inline it
-like the other files, and swap `startMusic` for a looping `<audio>`.
+Two pieces of music. The title fly-in plays `audio/music/flyin.mp3` (the fly-in
+video's own track, inlined by the build as `__MUSIC__`); it stops on START. The
+porch tune under play is synthesized (see `/* ---------------- music ---------------- */`):
+a 104 BPM C-major eighth-note loop of triangle bass plus square melody on the same
+AudioContext as the effects, scheduled with a 0.3s lookahead so it never stutters.
+It starts on START or the first tile click, stops with the mute toggle, and drops to
+30% while Crappy speaks (`duckMusic`, called from `speak` and the announcer).
+`window.ssMusic` exposes `.on` and `.step` for tests. To use a recorded porch track,
+drop it in `audio/music/`, inline it like `flyin.mp3`, and play it in `startMusic`.
 
 `window.ssSfx` is the live buffer map — `ssSfx.tap.buffer` means it decoded.
 
